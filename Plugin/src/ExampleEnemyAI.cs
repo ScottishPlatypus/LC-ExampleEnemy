@@ -96,15 +96,15 @@ namespace ExampleEnemy {
                     break;
 
                 case (int)State.StickingInFrontOfPlayer:
-                    agent.speed = 5f;
+                    agent.speed = 6f;
                     // Keep targeting closest player, unless they are over 20 units away and we can't see them.
-                    if (!TargetClosestPlayerInAnyCase() || (Vector3.Distance(transform.position, targetPlayer.transform.position) > 20 && !CheckLineOfSightForPosition(targetPlayer.transform.position))){
+                    if (!TargetClosestPlayerInAnyCase() || (Vector3.Distance(transform.position, targetPlayer.transform.position) > 25 && !CheckLineOfSightForPosition(targetPlayer.transform.position))){
                         LogIfDebugBuild("Stop Target Player");
                         StartSearch(transform.position);
                         SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
                         return;
                     }
-                    StickingInFrontOfPlayer();
+                    //StickingInFrontOfPlayer();
                     break;
 
                 case (int)State.HeadSwingAttackInProgress:
@@ -192,7 +192,8 @@ namespace ExampleEnemy {
             {
                 LogIfDebugBuild("Example Enemy Collision with Player!");
                 timeSinceHittingLocalPlayer = 0f;
-                playerControllerB.DamagePlayer(20);
+                playerControllerB.DamagePlayer(100);
+                DoAnimationClientRpc("rko");
             }
         }
 
