@@ -1,3 +1,3 @@
-# Example Enemy
+# Randy Orton
 
-This README file is for Thunderstore. Fill it out with information about your enemy!
+The Three most dangerous letters in sport entertainment.

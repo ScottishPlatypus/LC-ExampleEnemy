@@ -1,15 +1,15 @@
 ManifestFileVersion: 0
-CRC: 854083288
+CRC: 1468185163
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 10be2fb3a8f1dfb12317e99b7cd99957
+    Hash: e3df2c78b2bbf42ecfef8ab1f0d6fd18
   TypeTreeHash:
     serializedVersion: 2
-    Hash: 36aac13f66a6b29711a7417366ebafe7
+    Hash: 9a9a848e3ba897b05bb0e0f6cf79cfa6
   IncrementalBuildHash:
     serializedVersion: 2
-    Hash: 10be2fb3a8f1dfb12317e99b7cd99957
+    Hash: e3df2c78b2bbf42ecfef8ab1f0d6fd18
 HashAppended: 0
 ClassTypes:
 - Class: 1
@@ -19,6 +19,8 @@ ClassTypes:
 - Class: 21
   Script: {instanceID: 0}
 - Class: 23
+  Script: {instanceID: 0}
+- Class: 28
   Script: {instanceID: 0}
 - Class: 33
   Script: {instanceID: 0}
@@ -55,7 +57,7 @@ ClassTypes:
 - Class: 114
   Script: {fileID: 11500000, guid: d3cecf05b78b173605122a700874719c, type: 3}
 - Class: 114
-  Script: {fileID: 2106200333, guid: e0a89e6f23bd69e40ab1b6cd831745f1, type: 3}
+  Script: {fileID: -396064917, guid: 71176df94b3c8444fa3b57be3a6fcc2c, type: 3}
 - Class: 115
   Script: {instanceID: 0}
 - Class: 137
@@ -72,7 +74,7 @@ SerializeReferenceClassIdentifiers:
 - AssemblyName: Assembly-CSharp
   ClassName: NavSizeLimit
 Assets:
-- Assets/ModAssets/ExampleEnemy/ExampleEnemy.asset
-- Assets/ModAssets/ExampleEnemy/Bestiary/ExampleEnemyTK.asset
-- Assets/ModAssets/ExampleEnemy/Bestiary/ExampleEnemyTN.asset
+- Assets/ModAssets/Randy/RandyOrton.asset
+- Assets/ModAssets/Randy/Bestiary/RandyOrtonTN.asset
+- Assets/ModAssets/Randy/Bestiary/RandyOrtonTK.asset
 Dependencies: []

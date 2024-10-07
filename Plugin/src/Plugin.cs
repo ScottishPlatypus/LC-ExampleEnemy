@@ -4,9 +4,10 @@ using BepInEx;
 using LethalLib.Modules;
 using BepInEx.Logging;
 using System.IO;
-using ExampleEnemy.Configuration;
+using RandyOrton.Configuration;
+using System.Collections.Generic;
 
-namespace ExampleEnemy {
+namespace RandyOrton {
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInDependency(LethalLib.Plugin.ModGUID)] 
     public class Plugin : BaseUnityPlugin {
@@ -35,39 +36,39 @@ namespace ExampleEnemy {
             }
 
             // We load our assets from our asset bundle. Remember to rename them both here and in our Unity project.
-            var ExampleEnemy = ModAssets.LoadAsset<EnemyType>("ExampleEnemy");
-            var ExampleEnemyTN = ModAssets.LoadAsset<TerminalNode>("ExampleEnemyTN");
-            var ExampleEnemyTK = ModAssets.LoadAsset<TerminalKeyword>("ExampleEnemyTK");
+            var RandyOrton = ModAssets.LoadAsset<EnemyType>("RandyOrton");
+            var RandyOrtonTN = ModAssets.LoadAsset<TerminalNode>("RandyOrtonTN");
+            var RandyOrtonTK = ModAssets.LoadAsset<TerminalKeyword>("RandyOrtonTK");
 
             // Optionally, we can list which levels we want to add our enemy to, while also specifying the spawn weight for each.
-            /*
-            var ExampleEnemyLevelRarities = new Dictionary<Levels.LevelTypes, int> {
-                {Levels.LevelTypes.ExperimentationLevel, 10},
-                {Levels.LevelTypes.AssuranceLevel, 40},
-                {Levels.LevelTypes.VowLevel, 20},
-                {Levels.LevelTypes.OffenseLevel, 30},
-                {Levels.LevelTypes.MarchLevel, 20},
-                {Levels.LevelTypes.RendLevel, 50},
-                {Levels.LevelTypes.DineLevel, 25},
-                // {Levels.LevelTypes.TitanLevel, 33},
-                // {Levels.LevelTypes.All, 30},     // Affects unset values, with lowest priority (gets overridden by Levels.LevelTypes.Modded)
-                {Levels.LevelTypes.Modded, 60},     // Affects values for modded moons that weren't specified
+            
+            var RandyOrtonLevelRarities = new Dictionary<Levels.LevelTypes, int> {
+                {Levels.LevelTypes.ExperimentationLevel, 90},
+                {Levels.LevelTypes.AssuranceLevel, 90},
+                {Levels.LevelTypes.VowLevel, 90},
+                {Levels.LevelTypes.OffenseLevel, 90},
+                {Levels.LevelTypes.MarchLevel, 90},
+                {Levels.LevelTypes.RendLevel, 90},
+                {Levels.LevelTypes.DineLevel, 90},
+                {Levels.LevelTypes.TitanLevel, 90},
+                 {Levels.LevelTypes.All, 90},     // Affects unset values, with lowest priority (gets overridden by Levels.LevelTypes.Modded)
+                {Levels.LevelTypes.Modded, 50},     // Affects values for modded moons that weren't specified
             };
             // We can also specify custom level rarities
-            var ExampleEnemyCustomLevelRarities = new Dictionary<string, int> {
+            var RandyOrtonCustomLevelRarities = new Dictionary<string, int> {
                 {"EGyptLevel", 50},
                 {"46 Infernis", 69},    // Either LLL or LE(C) name can be used, LethalLib will handle both
             };
-            */
+            
 
             // Network Prefabs need to be registered. See https://docs-multiplayer.unity3d.com/netcode/current/basics/object-spawning/
             // LethalLib registers prefabs on GameNetworkManager.Start.
-            NetworkPrefabs.RegisterNetworkPrefab(ExampleEnemy.enemyPrefab);
+            NetworkPrefabs.RegisterNetworkPrefab(RandyOrton.enemyPrefab);
 
             // For different ways of registering your enemy, see https://github.com/EvaisaDev/LethalLib/blob/main/LethalLib/Modules/Enemies.cs
-            Enemies.RegisterEnemy(ExampleEnemy, BoundConfig.SpawnWeight.Value, Levels.LevelTypes.All, ExampleEnemyTN, ExampleEnemyTK);
+            //Enemies.RegisterEnemy(RandyOrton, BoundConfig.SpawnWeight.Value, Levels.LevelTypes.All, RandyOrtonTN, RandyOrtonTK);
             // For using our rarity tables, we can use the following:
-            // Enemies.RegisterEnemy(ExampleEnemy, ExampleEnemyLevelRarities, ExampleEnemyCustomLevelRarities, ExampleEnemyTN, ExampleEnemyTK);
+            Enemies.RegisterEnemy(RandyOrton, RandyOrtonLevelRarities, RandyOrtonCustomLevelRarities, RandyOrtonTN, RandyOrtonTK);
             
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
         }

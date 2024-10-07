@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# Harmony001: Harmony patch missing 'static' member modifier
+dotnet_diagnostic.Harmony001.severity = error
