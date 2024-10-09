@@ -47,13 +47,13 @@ namespace CustomEnnemies {
             // Optionally, we can list which levels we want to add our enemy to, while also specifying the spawn weight for each.
 
             var RandyOrtonLevelRarities = new Dictionary<Levels.LevelTypes, int> {
-                {Levels.LevelTypes.All, 150},     // Affects unset values, with lowest priority (gets overridden by Levels.LevelTypes.Modded)
-                {Levels.LevelTypes.Modded, 150},     // Affects values for modded moons that weren't specified
+                {Levels.LevelTypes.All, 120},     // Affects unset values, with lowest priority (gets overridden by Levels.LevelTypes.Modded)
+                {Levels.LevelTypes.Modded, 120},     // Affects values for modded moons that weren't specified
             };
 
             var BrolyLevelRarities = new Dictionary<Levels.LevelTypes, int> {
-                {Levels.LevelTypes.All, 150},     // Affects unset values, with lowest priority (gets overridden by Levels.LevelTypes.Modded)
-                {Levels.LevelTypes.Modded, 150},     // Affects values for modded moons that weren't specified
+                {Levels.LevelTypes.All, 120},     // Affects unset values, with lowest priority (gets overridden by Levels.LevelTypes.Modded)
+                {Levels.LevelTypes.Modded, 120},     // Affects values for modded moons that weren't specified
             };
             // We can also specify custom level rarities
 
