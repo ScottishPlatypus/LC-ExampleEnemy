@@ -3,14 +3,14 @@ using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
 
-namespace RandyOrton.Configuration {
+namespace CustomEnnemies.Configuration {
     public class PluginConfig
     {
         // For more info on custom configs, see https://lethal.wiki/dev/intermediate/custom-configs
         public ConfigEntry<int> SpawnWeight;
         public PluginConfig(ConfigFile cfg)
         {
-            SpawnWeight = cfg.Bind("General", "Spawn weight", 90,
+            SpawnWeight = cfg.Bind("General", "Spawn weight", 150,
                 "The spawn chance weight for RandyOrton, relative to other existing enemies.\n" +
                 "Goes up from 0, lower is more rare, 100 and up is very common.");
             

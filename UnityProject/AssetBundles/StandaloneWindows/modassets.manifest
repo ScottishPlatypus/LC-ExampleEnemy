@@ -1,15 +1,15 @@
 ManifestFileVersion: 0
-CRC: 1468185163
+CRC: 2827152429
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: e3df2c78b2bbf42ecfef8ab1f0d6fd18
+    Hash: 19d1661aa0d1d252d824b98d859770af
   TypeTreeHash:
     serializedVersion: 2
-    Hash: 9a9a848e3ba897b05bb0e0f6cf79cfa6
+    Hash: caafdc9dc23d7e5040b094a20f0d9f05
   IncrementalBuildHash:
     serializedVersion: 2
-    Hash: e3df2c78b2bbf42ecfef8ab1f0d6fd18
+    Hash: 19d1661aa0d1d252d824b98d859770af
 HashAppended: 0
 ClassTypes:
 - Class: 1
@@ -43,6 +43,10 @@ ClassTypes:
 - Class: 95
   Script: {instanceID: 0}
 - Class: 114
+  Script: {fileID: -1738459223, guid: f34019b478e7ca74aaa6c79920929d1a, type: 3}
+- Class: 114
+  Script: {fileID: 1823131638, guid: f34019b478e7ca74aaa6c79920929d1a, type: 3}
+- Class: 114
   Script: {fileID: 11500000, guid: 65d3fcb39dd67306e9bb17a603308070, type: 3}
 - Class: 114
   Script: {fileID: 11500000, guid: 04f75356a7e9c978bddc7d568e58a50b, type: 3}
@@ -56,8 +60,6 @@ ClassTypes:
   Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
 - Class: 114
   Script: {fileID: 11500000, guid: d3cecf05b78b173605122a700874719c, type: 3}
-- Class: 114
-  Script: {fileID: -396064917, guid: 71176df94b3c8444fa3b57be3a6fcc2c, type: 3}
 - Class: 115
   Script: {instanceID: 0}
 - Class: 137
@@ -74,7 +76,10 @@ SerializeReferenceClassIdentifiers:
 - AssemblyName: Assembly-CSharp
   ClassName: NavSizeLimit
 Assets:
+- Assets/ModAssets/Broly/Bestiary/BrolyTK.asset
+- Assets/ModAssets/Broly/Broly.asset
 - Assets/ModAssets/Randy/RandyOrton.asset
 - Assets/ModAssets/Randy/Bestiary/RandyOrtonTN.asset
+- Assets/ModAssets/Broly/Bestiary/BrolyTN.asset
 - Assets/ModAssets/Randy/Bestiary/RandyOrtonTK.asset
 Dependencies: []

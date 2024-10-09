@@ -4,7 +4,8 @@ using GameNetcodeStuff;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace RandyOrton {
+namespace CustomEnnemies
+{
 
     //TEST
     // You may be wondering, how does the Example Enemy know it is from class RandyOrtonAI?
@@ -27,12 +28,15 @@ namespace RandyOrton {
         System.Random enemyRandom = null!;
         bool isDeadAnimationDone;
         bool isAgressive;
+        float puntKickTimer;
         enum State {
             SearchingForPlayer,
             ChasePlayerRko,
             ChasePlayerPuntKick,
             RkoInProgress,
             PuntKickInProgress,
+            PuntKickNoSound,
+            Pin,
         }
 
         [Conditional("DEBUG")]
@@ -81,6 +85,11 @@ namespace RandyOrton {
             {
                 agent.speed = 0f;
             }
+
+            if(puntKickTimer > 0f)
+            {
+                puntKickTimer -= Time.deltaTime;
+            }
         }
 
         public override void DoAIInterval() {
@@ -98,6 +107,7 @@ namespace RandyOrton {
                             LogIfDebugBuild("Start Target Player For PuntKick");
                             StopSearch(currentSearch);
                             creatureVoice.mute = true;
+
                             SwitchToBehaviourClientRpc((int)State.ChasePlayerPuntKick);
                             creatureAnimator.SetTrigger("puntKickChase");
                             return;
@@ -167,7 +177,13 @@ namespace RandyOrton {
                     break;
 
                 case (int)State.PuntKickInProgress:
+                case (int)State.PuntKickNoSound:
                     agent.speed = 2f;
+                    // We don't care about doing anything here
+                    break;
+
+                case (int)State.Pin:
+                    agent.speed = 0f;
                     // We don't care about doing anything here
                     break;
 
@@ -256,6 +272,7 @@ namespace RandyOrton {
 
         void ChasePlayerPuntKick()
         {
+            LogIfDebugBuild("TEST V1");
             // We only run this method for the host because I'm paranoid about randomness not syncing I guess
             // This is fine because the game does sync the position of the enemy.
             // Also the attack is a ClientRpc so it should always sync
@@ -284,7 +301,17 @@ namespace RandyOrton {
             StopPlayerClientRpc();
             yield return new WaitForSeconds(0.5f);
             RkoAttackHitClientRpc();
-            yield return new WaitForSeconds(1.5f);
+            yield return new WaitForSeconds(1.2f);
+
+            DoAnimationClientRpc("pin");
+            SwitchToBehaviourClientRpc((int)State.Pin);
+
+            yield return new WaitForSeconds(3f);
+
+           // DoAnimationClientRpc("pose");
+           // SwitchToBehaviourClientRpc((int)State.Pose);
+
+           // yield return new WaitForSeconds(3f);
             /*
             // In case the player has already gone away, we just yield break (basically same as return, but for IEnumerator)
             if (currentBehaviourStateIndex != (int)State.RkoInProgress){
@@ -299,7 +326,13 @@ namespace RandyOrton {
 
         IEnumerator PuntKick()
         {
-            SwitchToBehaviourClientRpc((int)State.PuntKickInProgress);
+            if (puntKickTimer <= 0f)
+            {
+                SwitchToBehaviourClientRpc((int)State.PuntKickInProgress);
+                puntKickTimer = 7f;
+            }
+            else SwitchToBehaviourClientRpc((int)State.PuntKickNoSound);
+
             StalkPos = targetPlayer.transform.position;
             SetDestinationToPosition(StalkPos);
             if (isEnemyDead)
@@ -311,8 +344,21 @@ namespace RandyOrton {
             if (Vector3.Distance(transform.position, targetPlayer.transform.position) < 3f)
             {
                 PuntKickHitClientRpc();
-            }         
-            yield return new WaitForSeconds(2f);
+
+                yield return new WaitForSeconds(1.2f);
+
+                DoAnimationClientRpc("pin");
+                SwitchToBehaviourClientRpc((int)State.Pin);
+
+                 yield return new WaitForSeconds(3f);
+
+               // DoAnimationClientRpc("pose");
+               // SwitchToBehaviourClientRpc((int)State.Pose);
+
+               // yield return new WaitForSeconds(2f);
+            }
+            else yield return new WaitForSeconds(2f);
+
             /*
             // In case the player has already gone away, we just yield break (basically same as return, but for IEnumerator)
             if (currentBehaviourStateIndex != (int)State.PuntKickInProgress)
@@ -414,10 +460,15 @@ namespace RandyOrton {
             PlayerControllerB playerControllerB = targetPlayer;
             if (playerControllerB != null)
             {
+                Vector3 relativePos = transform.position - playerControllerB.transform.position;
+                Quaternion rotation = Quaternion.LookRotation(relativePos, Vector3.up);
+
+                playerControllerB.redirectToEnemy = this;
+                playerControllerB.syncFullCameraRotation = rotation.eulerAngles;
+                playerControllerB.ForceTurnTowardsTarget();
                 playerControllerB.disableMoveInput = true;
                 playerControllerB.voiceMuffledByEnemy = true;
                 playerControllerB.disableLookInput = true;
-                playerControllerB.redirectToEnemy = this;
             }
         }
     }

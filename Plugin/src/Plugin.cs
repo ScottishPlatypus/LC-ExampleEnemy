@@ -4,10 +4,10 @@ using BepInEx;
 using LethalLib.Modules;
 using BepInEx.Logging;
 using System.IO;
-using RandyOrton.Configuration;
+using CustomEnnemies.Configuration;
 using System.Collections.Generic;
 
-namespace RandyOrton {
+namespace CustomEnnemies {
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     [BepInDependency(LethalLib.Plugin.ModGUID)] 
     public class Plugin : BaseUnityPlugin {
@@ -40,36 +40,34 @@ namespace RandyOrton {
             var RandyOrtonTN = ModAssets.LoadAsset<TerminalNode>("RandyOrtonTN");
             var RandyOrtonTK = ModAssets.LoadAsset<TerminalKeyword>("RandyOrtonTK");
 
+            var Broly = ModAssets.LoadAsset<EnemyType>("Broly");
+            var BrolyTN = ModAssets.LoadAsset<TerminalNode>("BrolyTN");
+            var BrolyTK = ModAssets.LoadAsset<TerminalKeyword>("BrolyTK");
+
             // Optionally, we can list which levels we want to add our enemy to, while also specifying the spawn weight for each.
-            
+
             var RandyOrtonLevelRarities = new Dictionary<Levels.LevelTypes, int> {
-                {Levels.LevelTypes.ExperimentationLevel, 90},
-                {Levels.LevelTypes.AssuranceLevel, 90},
-                {Levels.LevelTypes.VowLevel, 90},
-                {Levels.LevelTypes.OffenseLevel, 90},
-                {Levels.LevelTypes.MarchLevel, 90},
-                {Levels.LevelTypes.RendLevel, 90},
-                {Levels.LevelTypes.DineLevel, 90},
-                {Levels.LevelTypes.TitanLevel, 90},
-                 {Levels.LevelTypes.All, 90},     // Affects unset values, with lowest priority (gets overridden by Levels.LevelTypes.Modded)
-                {Levels.LevelTypes.Modded, 50},     // Affects values for modded moons that weren't specified
+                {Levels.LevelTypes.All, 150},     // Affects unset values, with lowest priority (gets overridden by Levels.LevelTypes.Modded)
+                {Levels.LevelTypes.Modded, 150},     // Affects values for modded moons that weren't specified
+            };
+
+            var BrolyLevelRarities = new Dictionary<Levels.LevelTypes, int> {
+                {Levels.LevelTypes.All, 150},     // Affects unset values, with lowest priority (gets overridden by Levels.LevelTypes.Modded)
+                {Levels.LevelTypes.Modded, 150},     // Affects values for modded moons that weren't specified
             };
             // We can also specify custom level rarities
-            var RandyOrtonCustomLevelRarities = new Dictionary<string, int> {
-                {"EGyptLevel", 50},
-                {"46 Infernis", 69},    // Either LLL or LE(C) name can be used, LethalLib will handle both
-            };
-            
 
             // Network Prefabs need to be registered. See https://docs-multiplayer.unity3d.com/netcode/current/basics/object-spawning/
             // LethalLib registers prefabs on GameNetworkManager.Start.
             NetworkPrefabs.RegisterNetworkPrefab(RandyOrton.enemyPrefab);
+            NetworkPrefabs.RegisterNetworkPrefab(Broly.enemyPrefab);
 
             // For different ways of registering your enemy, see https://github.com/EvaisaDev/LethalLib/blob/main/LethalLib/Modules/Enemies.cs
             //Enemies.RegisterEnemy(RandyOrton, BoundConfig.SpawnWeight.Value, Levels.LevelTypes.All, RandyOrtonTN, RandyOrtonTK);
             // For using our rarity tables, we can use the following:
-            Enemies.RegisterEnemy(RandyOrton, RandyOrtonLevelRarities, RandyOrtonCustomLevelRarities, RandyOrtonTN, RandyOrtonTK);
-            
+            Enemies.RegisterEnemy(RandyOrton, RandyOrtonLevelRarities, null,RandyOrtonTN, RandyOrtonTK);
+            Enemies.RegisterEnemy(Broly, BrolyLevelRarities, null, BrolyTN, BrolyTK);
+
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
         }
 
