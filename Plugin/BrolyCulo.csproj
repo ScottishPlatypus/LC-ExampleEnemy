@@ -64,6 +64,9 @@
     <None Remove="FrenchPlatypus-RandyOrton\**" />
     <None Remove="src_Randy\**" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="src_Broly\FlowermanAI.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />

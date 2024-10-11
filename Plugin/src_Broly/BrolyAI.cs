@@ -30,12 +30,18 @@ namespace CustomEnnemies
         Vector3 spawnPos;
         System.Random enemyRandom = null!;
         bool isDeadAnimationDone;
-        bool muteVoice;
-        bool muteSteps;
+        bool attackingPlayer;
         bool isInterrupted;
         float fleaTimer;
-        Transform playerParent;
-        PlayerControllerB attackedPlayer;
+        float baseJumpForce;
+        int hitCount;
+
+        private Ray playerRay;
+
+        public bool carryingPlayerBody;
+
+        public DeadBodyInfo bodyBeingCarried;
+
         FlowermanAI flowermanTarget = null!;
         enum State {
             SearchingForPlayer,
@@ -55,8 +61,8 @@ namespace CustomEnnemies
             base.Start();
             LogIfDebugBuild("Broly Spawned");
             timeSinceHittingLocalPlayer = 0;
-            muteVoice = true;
             timeSinceNewRandPos = 0;
+            creatureAnimator.SetTrigger("startWalk");
             positionRandomness = new Vector3(0, 0, 0);
             agent.acceleration = 15f;
             spawnPos = transform.position;
@@ -64,6 +70,8 @@ namespace CustomEnnemies
             isDeadAnimationDone = false;
             // NOTE: Add your behavior states in your enemy script in Unity, where you can configure fun stuff
             // like a voice clip or an sfx clip to play when changing to that specific behavior state.
+            MuteVoiceClientRpc(true);
+            MuteStepsClientRpc(false);
             currentBehaviourStateIndex = (int)State.SearchingForPlayer;
             // We make the enemy start searching. This will make it start wandering around.
             StartSearch(transform.position);
@@ -76,30 +84,27 @@ namespace CustomEnnemies
                 if (!isDeadAnimationDone) {
                     LogIfDebugBuild("Stopping enemy voice with janky code.");
                     isDeadAnimationDone = true;
-                    creatureVoice.Stop();
-                    creatureVoice.PlayOneShot(dieSFX);
+                    MuteVoiceClientRpc(true);
+                    MuteStepsClientRpc(true);
+                    PlayDeathSoundClientRpc();
                 }
                 return;
             }
-
-            if(creatureVoice.mute != muteVoice)
-                creatureVoice.mute = muteVoice;
-
-            if (stepSound.mute != muteSteps)
-                stepSound.mute = muteSteps;
 
             timeSinceHittingLocalPlayer += Time.deltaTime;
             timeSinceNewRandPos += Time.deltaTime;
 
             var state = currentBehaviourStateIndex;
-            if (targetPlayer != null && (state == (int)State.ChasePlayer || state == (int)State.ChaseBracken)) {
+            if (targetPlayer != null && state == (int)State.ChasePlayer) 
+            {
+                SetDestinationToPosition(targetPlayer.transform.position);
                 turnCompass.LookAt(targetPlayer.gameplayCamera.transform.position);
                 transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(new Vector3(0f, turnCompass.eulerAngles.y, 0f)), 4f * Time.deltaTime);
             }
+
             if (stunNormalizedTimer > 0f)
             {
                 agent.speed = 0f;
-                syncMovementSpeed = 0f;
             }
 
             if (fleaTimer > 0f)
@@ -117,30 +122,42 @@ namespace CustomEnnemies
 
             switch (currentBehaviourStateIndex) {
                 case (int)State.SearchingForPlayer:
-                    agent.angularSpeed = 250;
-                    muteVoice = true;
-                    muteSteps = false;
+                    agent.speed = 2.5f;
                     if (FoundBrackenInMap() && flowermanTarget != null)
                     {
                         LogIfDebugBuild("found bracken");
+                        creatureAnimator.SetTrigger("startWalk");
                         SwitchToBehaviourClientRpc((int)State.ChaseBracken);
+                        MuteStepsClientRpc(true);
+                        MuteVoiceClientRpc(true);
                     }
-                    else if (FoundClosestPlayerInRange(4f) && targetPlayer != null) {
+                    else if (FoundClosestPlayerInRange(20f, 3f) && targetPlayer != null) {
+
+                        creatureAnimator.SetTrigger("chase");
                         SwitchToBehaviourClientRpc((int)State.ChasePlayer);
+                        MuteStepsClientRpc(true);
+                        MuteVoiceClientRpc(false);
                     }
 
                     break;
                 case (int)State.ChasePlayer:
-                    agent.speed = 8f;
-                    syncMovementSpeed = 8f;
-                    agent.angularSpeed = 200;
-                    muteVoice = false;
-                    muteSteps = true;
+                    agent.speed = 6.5f;
+                    agent.angularSpeed = 500f;
+                    agent.acceleration = 20f;
                     // Keep targeting closest player, unless they are over 20 units away and we can't see them.
                     if (!TargetClosestPlayerInAnyCase() || FoundBrackenInMap() || (Vector3.Distance(transform.position, targetPlayer.transform.position) > 15 && !CheckLineOfSightForPosition(targetPlayer.transform.position))) {
+
+                        if (targetPlayer != GameNetworkManager.Instance.localPlayerController)
+                        {
+                            ChangeOwnershipOfEnemy(targetPlayer.actualClientId);
+                        }                     
+
                         LogIfDebugBuild("Stop Target Player");
                         StartSearch(transform.position);
+                        creatureAnimator.SetTrigger("startWalk");
                         SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
+                        MuteStepsClientRpc(false);
+                        MuteVoiceClientRpc(true);
                         return;
                     }
 
@@ -148,17 +165,15 @@ namespace CustomEnnemies
                     break;
                 case (int)State.ChaseBracken:
                     agent.speed = 15f;
-                    syncMovementSpeed = 15f;
-                    agent.angularSpeed = 250;
-                    muteVoice = true;
-                    muteSteps = false;
                     // Keep targeting closest player, unless they are over 20 units away and we can't see them.
                     if (flowermanTarget == null)
                     {
                         LogIfDebugBuild("Stop Target Bracken");
                         StartSearch(transform.position);
-                        SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
                         creatureAnimator.SetTrigger("startWalk");
+                        SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
+                        MuteVoiceClientRpc(true);
+                        MuteStepsClientRpc(false);
                         return;
                     }
 
@@ -166,36 +181,54 @@ namespace CustomEnnemies
                     break;
 
                 case (int)State.AttackPlayer:
+                    agent.speed = 0;
+                    hitCount++;
+                    targetPlayer.DamagePlayer(5);
+
+                    if (hitCount == 21 || targetPlayer.isPlayerDead || isInterrupted == true)
+                    {
+                        LogIfDebugBuild("Release player");
+                        //ReleasePlayerClientRpc();
+
+                        inSpecialAnimationWithPlayer.inSpecialInteractAnimation = false;
+                        inSpecialAnimationWithPlayer.snapToServerPosition = false;
+                        inSpecialAnimationWithPlayer.voiceMuffledByEnemy = false;
+
+                        if (inSpecialAnimationWithPlayer.deadBody != null)
+                        {
+                            inSpecialAnimationWithPlayer.causeOfDeath = CauseOfDeath.Suffocation;
+                            bodyBeingCarried = inSpecialAnimationWithPlayer.deadBody;
+                            bodyBeingCarried.attachedTo = assParent;
+                            bodyBeingCarried.attachedLimb = inSpecialAnimationWithPlayer.deadBody.bodyParts[0];
+                            bodyBeingCarried.matchPositionExactly = true;
+                            carryingPlayerBody = true;
+                        }
+
+                        MuteStepsClientRpc(true);
+                        MuteVoiceClientRpc(true);
+                        FleaPlayer();
+                    }
+                    break;
                 case (int)State.AttackBracken:
-                    agent.angularSpeed = 250;
                     agent.speed = 0f;
-                    syncMovementSpeed = 0f;
-                    muteVoice = true;
-                    muteSteps = true;
                     // We don't care about doing anything here
                     break;
 
                 case (int)State.Flea:
                     agent.speed = 15f;
-                    syncMovementSpeed = 15f;
-                    agent.angularSpeed = 250;
-                    muteVoice = true;
-                    muteSteps = false;
-                    if (attackedPlayer != null && attackedPlayer.deadBody != null)
-                    {
-                        attackedPlayer.deadBody.SetRagdollPositionSafely(assParent.position);
-                    }
 
                     if (fleaTimer <= 0 || (Vector3.Distance(transform.position, spawnPos) < 1))
                     {
-                        if(attackedPlayer != null)
+                        if(carryingPlayerBody)
                         {
-                            DropPlayerClientRpc();
-                            attackedPlayer = null;
+                            DropPlayerBody();
                         }
 
                         StartSearch(transform.position);
+                        creatureAnimator.SetTrigger("startWalk");
                         SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
+                        MuteVoiceClientRpc(true);
+                        MuteStepsClientRpc(true);
                     }
                     // We don't care about doing anything here
                     break;
@@ -209,13 +242,15 @@ namespace CustomEnnemies
         bool FoundBrackenInMap()
         {
             flowermanTarget = null;
+            mostOptimalDistance = 2000f;
             if (FindObjectsOfType<FlowermanAI>().Length > 0)
             {
                 for(int i = 0; i < FindObjectsOfType<FlowermanAI>().Length; i++)
                 {
-                    if (FindObjectsOfType<FlowermanAI>()[i].isEnemyDead == false)
+                    if (FindObjectsOfType<FlowermanAI>()[i].isEnemyDead == false && Vector3.Distance(transform.position, FindObjectsOfType<FlowermanAI>()[i].transform.position) < mostOptimalDistance)
                     {
                         flowermanTarget = FindObjectsOfType<FlowermanAI>()[i];
+                        mostOptimalDistance = Vector3.Distance(transform.position, FindObjectsOfType<FlowermanAI>()[i].transform.position);
                         break;
                     }
                 }
@@ -225,38 +260,16 @@ namespace CustomEnnemies
             else return false;
         }
 
-        bool FoundClosestPlayerInRange(float range) {
-            mostOptimalDistance = range;
-            targetPlayer = null;
-
-            PlayerControllerB[] playersInSight = GetAllPlayersInLineOfSight(180, 60, eye);
-            if (playersInSight != null)
-            {
-                for (int i = 0; i < playersInSight.Length; i++)
-                {
-                    targetPlayer = playersInSight[i];
-                    break;
-                }
-            }
-
-            agent.speed = 2.5f;
-            syncMovementSpeed = 2.5f;
-            agent.angularSpeed = 200;
-
+        bool FoundClosestPlayerInRange(float range, float senseRange)
+        {
+            TargetClosestPlayer(bufferDistance: 1.5f, requireLineOfSight: true);
             if (targetPlayer == null)
             {
-                for (int i = 0; i < StartOfRound.Instance.connectedPlayersAmount + 1; i++)
-                {
-                    tempDist = Vector3.Distance(transform.position, StartOfRound.Instance.allPlayerScripts[i].transform.position);
-                    if (tempDist < mostOptimalDistance && !StartOfRound.Instance.allPlayerScripts[i].HasLineOfSightToPosition(transform.position))
-                    {
-                        mostOptimalDistance = tempDist;
-                        targetPlayer = StartOfRound.Instance.allPlayerScripts[i];
-                    }
-                }
+                // Couldn't see a player, so we check if a player is in sensing distance instead
+                TargetClosestPlayer(bufferDistance: 1.5f, requireLineOfSight: false);
+                range = senseRange;
             }
-            
-            return targetPlayer != null;
+            return targetPlayer != null && Vector3.Distance(transform.position, targetPlayer.transform.position) < range;
         }
 
         bool TargetClosestPlayerInAnyCase()
@@ -276,33 +289,32 @@ namespace CustomEnnemies
             return true;
         }
 
+        private void DropPlayerBody()
+        {
+            if (carryingPlayerBody)
+            {
+                carryingPlayerBody = false;
+                bodyBeingCarried.matchPositionExactly = false;
+                bodyBeingCarried.attachedTo = null;
+                bodyBeingCarried = null;
+            }
+        }
+
         void ChasePlayer() {
-            // We only run this method for the host because I'm paranoid about randomness not syncing I guess
-            // This is fine because the game does sync the position of the enemy.
-            // Also the attack is a ClientRpc so it should always sync
-            if (targetPlayer == null || !IsOwner) {
+            if (targetPlayer == null || !IsOwner)
+            {
                 return;
             }
 
             StalkPos = targetPlayer.transform.position;
-            //SetDestinationToPosition(StalkPos, checkForPath: false);
-            SetMovingTowardsTargetPlayer(targetPlayer);
 
             if (Vector3.Distance(transform.position, targetPlayer.transform.position) < 1.2f){
-                StartCoroutine(AttackPlayer());
+               StartCoroutine(AttackPlayer());
             }
         }
 
         void ChaseBracken()
         {
-            // We only run this method for the host because I'm paranoid about randomness not syncing I guess
-            // This is fine because the game does sync the position of the enemy.
-            // Also the attack is a ClientRpc so it should always sync
-            if (!IsOwner)
-            {
-                return;
-            }
-
             StalkPos = flowermanTarget.transform.position;
             SetDestinationToPosition(StalkPos, checkForPath: false);
 
@@ -312,71 +324,94 @@ namespace CustomEnnemies
             }
         }
 
-        void FleaPlayer()
+        void FleaPlayer(bool carryingBody = true)
         {
             LogIfDebugBuild("Flea player");
+            creatureAnimator.SetTrigger("startWalk");
             SwitchToBehaviourClientRpc((int)State.Flea);
+            MuteVoiceClientRpc(true);
+            MuteStepsClientRpc(true);
             SetDestinationToPosition(spawnPos);
 
             fleaTimer = 8f;
+
+            if (inSpecialAnimationWithPlayer != null)
+            {
+                inSpecialAnimationWithPlayer.inSpecialInteractAnimation = false;
+                inSpecialAnimationWithPlayer.snapToServerPosition = false;
+                inSpecialAnimationWithPlayer.inAnimationWithEnemy = null;
+                if (carryingBody && inSpecialAnimationWithPlayer.deadBody != null)
+                {
+                    bodyBeingCarried = inSpecialAnimationWithPlayer.deadBody;
+                    bodyBeingCarried.attachedTo = assParent;
+                    bodyBeingCarried.attachedLimb = inSpecialAnimationWithPlayer.deadBody.bodyParts[0];
+                    bodyBeingCarried.matchPositionExactly = true;
+                    carryingPlayerBody = true;
+                }
+            }
         }
 
         IEnumerator AttackPlayer() {
+            LogIfDebugBuild("attacking : " + targetPlayer.playerUsername);
 
-            attackedPlayer = null;
+            creatureAnimator.SetTrigger("attack");
             SwitchToBehaviourClientRpc((int)State.AttackPlayer);
-            transform.position = targetPlayer.transform.position;
-            agent.velocity = Vector3.zero;
+            MuteStepsClientRpc(true);
+            MuteVoiceClientRpc(true);
 
-            if(isEnemyDead){
-                yield break;
-            }
-            StopPlayerClientRpc();
+            inSpecialAnimationWithPlayer = targetPlayer;
+            inSpecialAnimationWithPlayer.inSpecialInteractAnimation = true;
+            inSpecialAnimationWithPlayer.snapToServerPosition = true;
+            inSpecialAnimationWithPlayer.DropAllHeldItemsClientRpc();
+            inSpecialAnimationWithPlayer.voiceMuffledByEnemy = true;
+
+            // StopPlayerClientRpc();
+
+            agent.velocity = Vector3.zero;
+            hitCount = 0;
 
             isInterrupted = false;
-            int hitCount = 0;
 
-            attackedPlayer = targetPlayer;
-            LogIfDebugBuild("attacking : " + targetPlayer.name);
-
-            while (isInterrupted == false)
+            Vector3 startingPosition = base.transform.position;
+            for (int i = 0; i < 5; i++)
             {
-                hitCount++;
-                LogIfDebugBuild("PlayerHealth : " + targetPlayer.health + " hit count : " + hitCount);
-                PlayerHitClientRpc();
-
-                if (hitCount == 12 || targetPlayer.isPlayerDead || isInterrupted == true)
-                    break;
-
-                yield return new WaitForSeconds(0.5f);
-
+                base.transform.position = Vector3.Lerp(startingPosition, targetPlayer.transform.position, (float)i / 5f);
                 yield return null;
             }
-
-            LogIfDebugBuild("Release player");
-
-            ReleasePlayerClientRpc();
-
-            if (isInterrupted == false)
-            {
-                targetPlayer.causeOfDeath = CauseOfDeath.Suffocation;
-                DragPlayerClientRpc();
-            }
-
-            SwitchToBehaviourClientRpc((int)State.Flea);
-            FleaPlayer();
+            base.transform.position = targetPlayer.transform.position;
         }
 
         IEnumerator AttackBracken()
         {
             LogIfDebugBuild("Attack Bracken");
             SwitchToBehaviourClientRpc((int)State.AttackBracken);
-            flowermanTarget.KillEnemyOnOwnerClient();
+            MuteStepsClientRpc(true);
+            MuteVoiceClientRpc(true);
+
+            FlowermanAI flowermanToKill = null;
+            if (FindObjectsOfType<FlowermanAI>().Length > 0)
+            {
+                for (int i = 0; i < FindObjectsOfType<FlowermanAI>().Length; i++)
+                {
+                    if (FindObjectsOfType<FlowermanAI>()[i].isEnemyDead == false && Vector3.Distance(transform.position, FindObjectsOfType<FlowermanAI>()[i].transform.position) < mostOptimalDistance)
+                    {
+                        flowermanToKill = FindObjectsOfType<FlowermanAI>()[i];
+                        mostOptimalDistance = Vector3.Distance(transform.position, FindObjectsOfType<FlowermanAI>()[i].transform.position);
+                        break;
+                    }
+                }
+
+                if(flowermanToKill != null)
+                    flowermanToKill.KillEnemyOnOwnerClient();
+            }
 
             yield return new WaitForSeconds(3f);
 
             StartSearch(transform.position);
+            creatureAnimator.SetTrigger("startWalk");
             SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
+            MuteVoiceClientRpc(true);
+            MuteStepsClientRpc(false);
         }
 
         public override void OnCollideWithPlayer(Collider other) {
@@ -392,6 +427,34 @@ namespace CustomEnnemies
             }
         }
 
+        public override void KillEnemy(bool destroy = false)
+        {
+            if (creatureVoice != null)
+            {
+                creatureVoice.Stop();
+            }
+            creatureSFX.Stop();
+            stepSound.Stop();
+            creatureAnimator.SetLayerWeight(2, 0f);
+            base.KillEnemy();
+            if (carryingPlayerBody)
+            {
+                carryingPlayerBody = false;
+                if (bodyBeingCarried != null)
+                {
+                    bodyBeingCarried.matchPositionExactly = false;
+                    bodyBeingCarried.attachedTo = null;
+                }
+            }
+            if (attackingPlayer && inSpecialAnimationWithPlayer != null)
+            {
+                inSpecialAnimationWithPlayer.inSpecialInteractAnimation = false;
+                inSpecialAnimationWithPlayer.snapToServerPosition = false;
+                inSpecialAnimationWithPlayer.voiceMuffledByEnemy = false;
+                //ReleasePlayerClientRpc();
+            }
+        }
+
         public override void HitEnemy(int force = 1, PlayerControllerB? playerWhoHit = null, bool playHitSFX = false, int hitID = -1) {
             base.HitEnemy(force, playerWhoHit, playHitSFX, hitID);
             if(isEnemyDead){
@@ -402,30 +465,50 @@ namespace CustomEnnemies
             {
                 LogIfDebugBuild("Interrupt enemy");
                 isInterrupted = true;
+            }
 
-                if(attackedPlayer!= null)
-                {
-                    attackedPlayer = null;
-                }
+            if(currentBehaviourStateIndex == (int)State.SearchingForPlayer && playerWhoHit != null)
+            {
+                LogIfDebugBuild("Chase " + playerWhoHit + " after being hit");
+                targetPlayer = playerWhoHit;
+                creatureAnimator.SetTrigger("chase");
+                SwitchToBehaviourClientRpc((int)State.ChasePlayer);
+                MuteVoiceClientRpc(false);
+                MuteStepsClientRpc(true);
             }
 
             enemyHP -= force;
             if (IsOwner) {
               
               
-                if (enemyHP <= 0 && !isEnemyDead) {
-                    // Our death sound will be played through creatureVoice when KillEnemy() is called.
-                    // KillEnemy() will also attempt to call creatureAnimator.SetTrigger("KillEnemy"),
-                    // so we don't need to call a death animation ourselves.
-                    StopCoroutine(AttackPlayer());
-                    // We need to stop our search coroutine, because the game does not do that by default.
+                if (enemyHP <= 0) {
                     StopCoroutine(searchCoroutine);
 
-                    creatureVoice.mute = false;
-                    stepSound.mute = true;
+                    MuteVoiceClientRpc(false);
+                    MuteStepsClientRpc(true);
                     KillEnemyOnOwnerClient();
                 }
             }
+        }
+
+        [ClientRpc]
+        public void PlayDeathSoundClientRpc()
+        {
+            creatureSFX.PlayOneShot(dieSFX);
+        }
+
+        [ClientRpc]
+        public void MuteVoiceClientRpc(bool mute)
+        {
+            LogIfDebugBuild("Mute voice : " + mute);
+            creatureVoice.mute = mute;
+        }
+
+        [ClientRpc]
+        public void MuteStepsClientRpc(bool mute)
+        {
+            LogIfDebugBuild("Mute voice : " + mute);
+            stepSound.mute = mute;
         }
 
         [ClientRpc]
@@ -433,7 +516,7 @@ namespace CustomEnnemies
             LogIfDebugBuild($"Animation: {animationName}");
             creatureAnimator.SetTrigger(animationName);
         }
-
+        /*
         [ClientRpc]
         public void PlayerHitClientRpc()
         {
@@ -442,73 +525,76 @@ namespace CustomEnnemies
             if (playerControllerB != null)
             {
                 LogIfDebugBuild("hit player!");
-                timeSinceHittingLocalPlayer = 0f;
-                playerControllerB.DamagePlayer(10);
+                playerControllerB.DamagePlayer(5);
             }
         }
 
         [ClientRpc]
         public void StopPlayerClientRpc()
         {
-            LogIfDebugBuild("StopPlayerClientRpc");
             PlayerControllerB playerControllerB = targetPlayer;
             if (playerControllerB != null)
             {
-                playerControllerB.disableLookInput = true;
-                playerControllerB.disableMoveInput = true;
-                playerControllerB.voiceMuffledByEnemy = true;
+                LogIfDebugBuild("StopPlayerClientRpc : " + targetPlayer.playerUsername);
+
+                inSpecialAnimationWithPlayer = playerControllerB;
+                inSpecialAnimationWithPlayer.inSpecialInteractAnimation = true;
+                inSpecialAnimationWithPlayer.snapToServerPosition = true;
+
                 playerControllerB.DropAllHeldItemsClientRpc();
-                playerControllerB.disableInteract = true;
+               // playerControllerB.disableInteract = true;
+               // playerControllerB.disableLookInput = true;
+               //  playerControllerB.disableMoveInput = true;
+                playerControllerB.voiceMuffledByEnemy = true;
+               // baseJumpForce = playerControllerB.jumpForce;
+               // playerControllerB.jumpForce = 0;
             }
         }
 
         [ClientRpc]
         public void ReleasePlayerClientRpc()
         {
-            LogIfDebugBuild("ReleasePlayerClientRpc");
             PlayerControllerB playerControllerB = targetPlayer;
             if (playerControllerB != null)
             {
-                playerControllerB.disableLookInput = false;
-                playerControllerB.disableInteract = false;
-                playerControllerB.disableMoveInput = false;
+                LogIfDebugBuild("ReleasePlayerClientRpc : " + targetPlayer.playerUsername);
+
+                inSpecialAnimationWithPlayer.inSpecialInteractAnimation = false;
+                inSpecialAnimationWithPlayer.snapToServerPosition = false;
+
+               // playerControllerB.disableLookInput = false;
+               // playerControllerB.disableInteract = false;
+               // playerControllerB.disableMoveInput = false;
                 playerControllerB.voiceMuffledByEnemy = false;
-                playerControllerB.redirectToEnemy = null;
+              //  playerControllerB.redirectToEnemy = null;
+              //  playerControllerB.jumpForce = baseJumpForce;
             }
         }
 
         [ClientRpc]
-        public void DragPlayerClientRpc()
+        public void DragPlayerBodyClientRpc()
         {
-            LogIfDebugBuild("DragPlayerClientRpc");
-            PlayerControllerB playerControllerB = attackedPlayer;
-
-            if(!playerControllerB.isPlayerDead)
-                playerControllerB.SpawnDeadBody(playerControllerB.GetInstanceID(), Vector3.zero, (int)CauseOfDeath.Suffocation, playerControllerB);
-
-            if (playerControllerB.deadBody != null)
+            if (carryingPlayerBody)
             {
-                playerParent = playerControllerB.deadBody.transform.parent;
-
-                playerControllerB.deadBody.speedMultiplier = 0;
-                playerControllerB.deadBody.physicsParent = assParent;
-                playerControllerB.deadBody.maxVelocity = 0;
-                playerControllerB.deadBody.transform.SetParent(assParent);
-                playerControllerB.deadBody.canBeGrabbedBackByPlayers = false;
+                carryingPlayerBody = false;
+                bodyBeingCarried.matchPositionExactly = false;
+                bodyBeingCarried.attachedTo = null;
+                bodyBeingCarried = null;
             }
         }
 
         [ClientRpc]
-        public void DropPlayerClientRpc()
+        public void DropPlayerBodyClientRpc()
         {
-            PlayerControllerB playerControllerB = attackedPlayer;
-            if(playerControllerB.deadBody!= null)
+            if (carryingPlayerBody)
             {
-                playerControllerB.deadBody.transform.SetParent(playerParent);
-                playerControllerB.deadBody.canBeGrabbedBackByPlayers = true;
-                playerControllerB.playerRigidbody.mass = 1;
-            }      
+                carryingPlayerBody = false;
+                bodyBeingCarried.matchPositionExactly = false;
+                bodyBeingCarried.attachedTo = null;
+                bodyBeingCarried = null;
+            }
         }
+        */
     }
 }
 

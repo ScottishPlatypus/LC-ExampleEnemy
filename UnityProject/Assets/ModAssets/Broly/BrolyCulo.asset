@@ -81,7 +81,7 @@ MonoBehaviour:
   MaxCount: 1
   numberSpawned: 0
   nestsSpawned: 0
-  isOutsideEnemy: 0
+  isOutsideEnemy: 1
   isDaytimeEnemy: 0
   increasedChanceInterior: 1
   normalizedTimeInDayToLeave: 0
@@ -92,7 +92,7 @@ MonoBehaviour:
   canDie: 1
   canBeDestroyed: 0
   destroyOnDeath: 0
-  canSeeThroughFog: 1
+  canSeeThroughFog: 0
   pushPlayerForce: 0
   pushPlayerDistance: 0
   SizeLimit: 0
@@ -105,7 +105,7 @@ MonoBehaviour:
   minEnemiesToSpawnNest: 0
   hitBodySFX: {fileID: 0}
   hitEnemyVoiceSFX: {fileID: 0}
-  deathSFX: {fileID: 0}
+  deathSFX: {fileID: 8300000, guid: 6d5f9bd100a69154996a88dc5bff8e96, type: 3}
   stunSFX: {fileID: 0}
   miscAnimations: []
   audioClips: []

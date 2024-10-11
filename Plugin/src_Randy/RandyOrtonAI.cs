@@ -68,8 +68,8 @@ namespace CustomEnnemies
                 if (!isDeadAnimationDone) {
                     LogIfDebugBuild("Stopping enemy voice with janky code.");
                     isDeadAnimationDone = true;
-                    creatureVoice.Stop();
-                    creatureVoice.PlayOneShot(dieSFX);
+                    MuteVoiceClientRpc(false);
+                    PlayDeathSoundClientRpc();
                 }
                 return;
             }
@@ -106,7 +106,7 @@ namespace CustomEnnemies
                         {
                             LogIfDebugBuild("Start Target Player For PuntKick");
                             StopSearch(currentSearch);
-                            creatureVoice.mute = true;
+                            MuteVoiceClientRpc(true);
 
                             SwitchToBehaviourClientRpc((int)State.ChasePlayerPuntKick);
                             creatureAnimator.SetTrigger("puntKickChase");
@@ -116,7 +116,7 @@ namespace CustomEnnemies
                         {
                             LogIfDebugBuild("Start Target Player For Rko");
                             StopSearch(currentSearch);
-                            creatureVoice.mute = true;
+                            MuteVoiceClientRpc(true);
                             SwitchToBehaviourClientRpc((int)State.ChasePlayerRko);
                             creatureAnimator.SetTrigger("rkoChase");
                             return;
@@ -132,7 +132,7 @@ namespace CustomEnnemies
                         LogIfDebugBuild("Stop Target Player");
                         StartSearch(transform.position);
                         SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
-                        creatureVoice.mute = false;
+                        MuteVoiceClientRpc(false);
                         creatureAnimator.SetTrigger("startWalk");
                         return;
                     }
@@ -149,7 +149,7 @@ namespace CustomEnnemies
                         LogIfDebugBuild("Player target has sight on Randy");
                         StartSearch(transform.position);
                         SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
-                        creatureVoice.mute = false;
+                        MuteVoiceClientRpc(false);
                         creatureAnimator.SetTrigger("startWalk");
                         return;
                     }
@@ -165,7 +165,7 @@ namespace CustomEnnemies
                         isAgressive = false;
                         StartSearch(transform.position);
                         SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
-                        creatureVoice.mute = false;
+                        MuteVoiceClientRpc(false);
                         creatureAnimator.SetTrigger("startWalk");
                         return;
                     }
@@ -263,7 +263,7 @@ namespace CustomEnnemies
             // We only run this method for the host because I'm paranoid about randomness not syncing I guess
             // This is fine because the game does sync the position of the enemy.
             // Also the attack is a ClientRpc so it should always sync
-            if (targetPlayer == null || !IsOwner) {
+            if (targetPlayer == null) {
                 return;
             }
 
@@ -281,7 +281,7 @@ namespace CustomEnnemies
             // We only run this method for the host because I'm paranoid about randomness not syncing I guess
             // This is fine because the game does sync the position of the enemy.
             // Also the attack is a ClientRpc so it should always sync
-            if (targetPlayer == null || !IsOwner)
+            if (targetPlayer == null)
             {
                 return;
             }
@@ -417,6 +417,20 @@ namespace CustomEnnemies
                     KillEnemyOnOwnerClient();
                 }
             }
+        }
+
+        [ClientRpc]
+        public void PlayDeathSoundClientRpc()
+        {
+            creatureVoice.Stop();
+            creatureVoice.PlayOneShot(dieSFX);
+        }
+
+        [ClientRpc]
+        public void MuteVoiceClientRpc(bool mute)
+        {
+            LogIfDebugBuild("Mute voice : " + mute);
+            creatureVoice.mute = mute;
         }
 
         [ClientRpc]
