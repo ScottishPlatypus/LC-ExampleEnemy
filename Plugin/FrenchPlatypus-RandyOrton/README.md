@@ -1,3 +1,3 @@
 # Randy Orton
 
-The Three most dangerous letters in sport entertainment.
+Adds Randy Orton as a brand new enemy with its own ai, sounds and animations.

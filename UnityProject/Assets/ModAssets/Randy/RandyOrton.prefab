@@ -85,7 +85,7 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 5
-  MaxDistance: 25
+  MaxDistance: 60
   Pan2D: 0
   rolloffMode: 1
   BypassEffects: 0
@@ -524,7 +524,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d7127b8f98ca8ec9896b384a71d39a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainScript: {fileID: 9184509053783491043}
+  mainScript: {fileID: 675311558117533786}
   canCollideWithEnemies: 1
   onlyCollideWhenGrounded: 0
 --- !u!65 &1314844321722436662
@@ -947,7 +947,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 5237ffb5d199aa04bb7a783e3c4271e4,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3742407835892290726, guid: 5237ffb5d199aa04bb7a783e3c4271e4,
         type: 3}
@@ -1067,10 +1067,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5237ffb5d199aa04bb7a783e3c4271e4,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 9184509053783491043}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5237ffb5d199aa04bb7a783e3c4271e4,
-        type: 3}
-      insertIndex: -1
       addedObject: {fileID: 1583734636825898487}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5237ffb5d199aa04bb7a783e3c4271e4,
         type: 3}
@@ -1080,6 +1076,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1473527860191084644}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5237ffb5d199aa04bb7a783e3c4271e4,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 675311558117533786}
   m_SourcePrefab: {fileID: 100100000, guid: 5237ffb5d199aa04bb7a783e3c4271e4, type: 3}
 --- !u!4 &108122108322979454 stripped
 Transform:
@@ -1141,7 +1141,29 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1217312556903825454}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &9184509053783491043
+--- !u!195 &1583734636825898487
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2028214690088041855}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.65
+  m_Speed: 4
+  m_Acceleration: 15
+  avoidancePriority: 50
+  m_AngularSpeed: 250
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2.7
+  m_BaseOffset: 0.3
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 1
+--- !u!114 &5012180473837390259
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1150,7 +1172,48 @@ MonoBehaviour:
   m_GameObject: {fileID: 2028214690088041855}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 1823131638, guid: f34019b478e7ca74aaa6c79920929d1a, type: 3}
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 951099334
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 1
+  AutoObjectParentSync: 1
+--- !u!95 &1473527860191084644
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2028214690088041855}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: f44df3b767275b84d83df87f10e2a656, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &675311558117533786
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2028214690088041855}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1823131638, guid: d08514e2e1a26e949ad21770e1c1c0ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   enemyType: {fileID: 11400000, guid: 94c32305e9850944c9687201e7c970aa, type: 2}
@@ -1160,7 +1223,7 @@ MonoBehaviour:
   creatureVoice: {fileID: 9010807626354533876}
   creatureSFX: {fileID: 7818870867791669158}
   eye: {fileID: 3651934374351207393}
-  dieSFX: {fileID: 8300000, guid: 1bbd8a1adba62fe48ba71b6a0d889156, type: 3}
+  dieSFX: {fileID: 8300000, guid: 8bcad4d743b5c424a81fe2c2d35b3009, type: 3}
   enemyBehaviourStates:
   - name: SearchingForPlayer
     VoiceClip: {fileID: 0}
@@ -1298,69 +1361,6 @@ MonoBehaviour:
   gotFarthestNodeAsync: 0
   turnCompass: {fileID: 8808711027650562054}
   attackArea: {fileID: 1474696121541655423}
---- !u!195 &1583734636825898487
-NavMeshAgent:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2028214690088041855}
-  m_Enabled: 1
-  m_AgentTypeID: 0
-  m_Radius: 0.65
-  m_Speed: 4
-  m_Acceleration: 15
-  avoidancePriority: 50
-  m_AngularSpeed: 250
-  m_StoppingDistance: 0
-  m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
-  m_AutoRepath: 1
-  m_Height: 2.7
-  m_BaseOffset: 0.3
-  m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 1
---- !u!114 &5012180473837390259
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2028214690088041855}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 951099334
-  AlwaysReplicateAsRoot: 1
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 1
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 1
-  AutoObjectParentSync: 1
---- !u!95 &1473527860191084644
-Animator:
-  serializedVersion: 5
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2028214690088041855}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: f44df3b767275b84d83df87f10e2a656, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
 --- !u!4 &2525243180482270344 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3742407835892290726, guid: 5237ffb5d199aa04bb7a783e3c4271e4,

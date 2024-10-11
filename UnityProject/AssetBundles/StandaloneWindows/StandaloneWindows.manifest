@@ -1,7 +1,10 @@
 ManifestFileVersion: 0
-CRC: 1870541495
+CRC: 235815347
 AssetBundleManifest:
   AssetBundleInfos:
     Info_0:
-      Name: modassets
+      Name: modassets_broly
+      Dependencies: {}
+    Info_1:
+      Name: modassets_randy
       Dependencies: {}

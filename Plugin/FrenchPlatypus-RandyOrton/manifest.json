@@ -2,7 +2,7 @@
     "namespace": "PlatypusCrew",
     "name": "RandyOrton",
     "description": "The three most dangerous letters in sport entertainment",
-    "version_number": "0.0.3",
+    "version_number": "1.2.0",
     "dependencies": [
         "BepInEx-BepInExPack-5.4.2100",
         "Evaisa-HookGenPatcher-0.0.5",
