@@ -7,7 +7,7 @@
 		<!-- This is the name of your mod. This will be used by tcli when building our Thunderstore package. -->
     <Product>BrolyCulo</Product>
     <!-- Change to whatever version you're currently on. This will be used by tcli when building our Thunderstore package. -->
-    <Version>1.1.1</Version>
+    <Version>1.2.0</Version>
   </PropertyGroup>
 
   <!-- Thunderstore CLI stuff -->
@@ -57,15 +57,24 @@
     <Compile Remove="FrenchPlatypus-BrolyCulo\**" />
     <Compile Remove="FrenchPlatypus-RandyOrton\**" />
     <Compile Remove="src_Randy\**" />
+    <Compile Remove="src_Wizard\**" />
     <EmbeddedResource Remove="FrenchPlatypus-BrolyCulo\**" />
     <EmbeddedResource Remove="FrenchPlatypus-RandyOrton\**" />
     <EmbeddedResource Remove="src_Randy\**" />
+    <EmbeddedResource Remove="src_Wizard\**" />
     <None Remove="FrenchPlatypus-BrolyCulo\**" />
     <None Remove="FrenchPlatypus-RandyOrton\**" />
     <None Remove="src_Randy\**" />
+    <None Remove="src_Wizard\**" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="BACKUP\BrolyAI - Copie.cs" />
+    <Compile Remove="BACKUP\BrolyAI.cs" />
+    <Compile Remove="src_Broly\EnemyAI.cs" />
+    <Compile Remove="src_Broly\ExampleEnemy.cs" />
     <Compile Remove="src_Broly\FlowermanAI.cs" />
+    <Compile Remove="src_Broly\NutCrackerEnemyAI.cs" />
+    <Compile Remove="src_Broly\PlayerControllerB.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -89,6 +98,9 @@
   <!-- Package References - Game Assemblies -->
   <ItemGroup Condition="$(CI) == 'true'">
     <PackageReference Include="LethalCompany.GameLibs.Steam" Version="*-*" Publicize="true" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="BACKUP\" />
   </ItemGroup>
 
   <!-- Allows us to use Rpc methods. See https://github.com/EvaisaDev/UnityNetcodePatcher -->

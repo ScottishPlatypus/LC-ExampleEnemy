@@ -58,6 +58,7 @@ namespace CustomEnnemies {
             //Enemies.RegisterEnemy(Broly, BrolyLevelRarities, null, BrolyTN, BrolyTK);
 
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
+            Logger.LogInfo($"KAKAROOOOOOOT!");
         }
 
         private static void InitializeNetworkBehaviours() {

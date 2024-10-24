@@ -21,29 +21,28 @@ namespace CustomEnnemies
         public Transform turnCompass = null!;
         public Transform attackArea = null!;
         public Transform assParent = null!;
+        public Transform playerParent = null!;
         public AudioSource stepSound = null!;
 #pragma warning restore 0649
         float timeSinceHittingLocalPlayer;
         float timeSinceNewRandPos;
         Vector3 positionRandomness;
-        Vector3 StalkPos;
         Vector3 spawnPos;
         System.Random enemyRandom = null!;
         bool isDeadAnimationDone;
         bool attackingPlayer;
         bool isInterrupted;
         float fleaTimer;
-        float baseJumpForce;
-        int hitCount;
-
+        Coroutine attackingPlayerCoroutine;
         private Ray playerRay;
-
         public bool carryingPlayerBody;
+        Vector3 targetLastPos;
 
         public DeadBodyInfo bodyBeingCarried;
 
         FlowermanAI flowermanTarget = null!;
-        enum State {
+        enum State
+        {
             SearchingForPlayer,
             ChasePlayer,
             ChaseBracken,
@@ -53,18 +52,22 @@ namespace CustomEnnemies
         }
 
         [Conditional("DEBUG")]
-        void LogIfDebugBuild(string text) {
+        void LogIfDebugBuild(string text)
+        {
             Plugin.Logger.LogInfo(text);
         }
 
-        public override void Start() {
+        public override void Start()
+        {
             base.Start();
             LogIfDebugBuild("Broly Spawned");
+            LogIfDebugBuild("Is Host : " + IsServer);
             timeSinceHittingLocalPlayer = 0;
             timeSinceNewRandPos = 0;
-            creatureAnimator.SetTrigger("startWalk");
+            DoAnimationClientRpc("startWalk");
             positionRandomness = new Vector3(0, 0, 0);
             agent.acceleration = 15f;
+            agent.angularSpeed = 1000f;
             spawnPos = transform.position;
             enemyRandom = new System.Random(StartOfRound.Instance.randomMapSeed + thisEnemyIndex);
             isDeadAnimationDone = false;
@@ -77,29 +80,35 @@ namespace CustomEnnemies
             StartSearch(transform.position);
         }
 
-        public override void Update() {
+        public override void Update()
+        {
             base.Update();
-            if (isEnemyDead) {
+            if (isEnemyDead)
+            {
                 // For some weird reason I can't get an RPC to get called from HitEnemy() (works from other methods), so we do this workaround. We just want the enemy to stop playing the song.
-                if (!isDeadAnimationDone) {
+                if (!isDeadAnimationDone)
+                {
                     LogIfDebugBuild("Stopping enemy voice with janky code.");
                     isDeadAnimationDone = true;
                     MuteVoiceClientRpc(true);
                     MuteStepsClientRpc(true);
+                    DoAnimationClientRpc("killEnemy");
                     PlayDeathSoundClientRpc();
                 }
                 return;
             }
 
-            timeSinceHittingLocalPlayer += Time.deltaTime;
-            timeSinceNewRandPos += Time.deltaTime;
-
             var state = currentBehaviourStateIndex;
-            if (targetPlayer != null && state == (int)State.ChasePlayer) 
+            if (targetPlayer != null && state == (int)State.ChasePlayer)
             {
                 SetDestinationToPosition(targetPlayer.transform.position);
                 turnCompass.LookAt(targetPlayer.gameplayCamera.transform.position);
                 transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(new Vector3(0f, turnCompass.eulerAngles.y, 0f)), 4f * Time.deltaTime);
+
+                if (Vector3.Distance(transform.position, targetPlayer.transform.position) < 2)
+                {
+                    transform.position = Vector3.MoveTowards(transform.position, targetPlayer.transform.position, 3f * Time.deltaTime);
+                }
             }
 
             if (stunNormalizedTimer > 0f)
@@ -113,105 +122,116 @@ namespace CustomEnnemies
             }
         }
 
-        public override void DoAIInterval() {
+        public override void OnGainedOwnership()
+        {
+            base.OnGainedOwnership();
 
+            if (IsOwner)
+            {
+                LogIfDebugBuild("Get ownership");
+                if (currentBehaviourStateIndex == (int)State.SearchingForPlayer)
+                {
+                    LogIfDebugBuild("restart search coroutine");
+
+                    DoAnimationClientRpc("startWalk");
+                    MuteVoiceClientRpc(true);
+                    MuteStepsClientRpc(false);
+                    StartSearch(transform.position);
+                }
+
+                if (currentBehaviourStateIndex == (int)State.ChasePlayer)
+                {
+                    FoundClosestPlayerInRange(20f, 4f);
+                }
+            }
+        }
+
+        public override void DoAIInterval()
+        {
             base.DoAIInterval();
-            if (isEnemyDead || StartOfRound.Instance.allPlayersDead) {
+
+            if (isEnemyDead || StartOfRound.Instance.allPlayersDead)
+            {
                 return;
             };
 
-            switch (currentBehaviourStateIndex) {
+            switch (currentBehaviourStateIndex)
+            {
                 case (int)State.SearchingForPlayer:
                     agent.speed = 2.5f;
+
+                    if (!IsServer && IsOwner)
+                    {
+                        LogIfDebugBuild("Set Ownership back to : " + StartOfRound.Instance.allPlayerScripts[0].playerUsername);
+                        ChangeOwnershipOfEnemy(StartOfRound.Instance.allPlayerScripts[0].actualClientId);
+                        return;
+                    }
+
                     if (FoundBrackenInMap() && flowermanTarget != null)
                     {
                         LogIfDebugBuild("found bracken");
-                        creatureAnimator.SetTrigger("startWalk");
-                        SwitchToBehaviourClientRpc((int)State.ChaseBracken);
+                        DoAnimationClientRpc("chaseBracken");
+                        SwitchToBehaviourState((int)State.ChaseBracken);
                         MuteStepsClientRpc(true);
                         MuteVoiceClientRpc(true);
                     }
-                    else if (FoundClosestPlayerInRange(20f, 3f) && targetPlayer != null) {
-
-                        creatureAnimator.SetTrigger("chase");
-                        SwitchToBehaviourClientRpc((int)State.ChasePlayer);
+                    else if (FoundClosestPlayerInRange(20f, 4f) && targetPlayer != null)
+                    {
+                        LogIfDebugBuild("chasing Player : " + targetPlayer.playerUsername);
+                        DoAnimationClientRpc("chasePlayer");
+                        SwitchToBehaviourState((int)State.ChasePlayer);
                         MuteStepsClientRpc(true);
                         MuteVoiceClientRpc(false);
                     }
 
                     break;
                 case (int)State.ChasePlayer:
-                    agent.speed = 6.5f;
-                    agent.angularSpeed = 500f;
-                    agent.acceleration = 20f;
+                    agent.speed = 8f;
+
+                    if (targetPlayer == null)
+                        FoundClosestPlayerInRange(20f, 4f);
+
+
+                    if (IsOwner && targetPlayer != null && targetPlayer != GameNetworkManager.Instance.localPlayerController)
+                    {
+                        ChangeOwnershipOfEnemy(targetPlayer.actualClientId);
+                    }
+
                     // Keep targeting closest player, unless they are over 20 units away and we can't see them.
-                    if (!TargetClosestPlayerInAnyCase() || FoundBrackenInMap() || (Vector3.Distance(transform.position, targetPlayer.transform.position) > 15 && !CheckLineOfSightForPosition(targetPlayer.transform.position))) {
-
-                        if (targetPlayer != GameNetworkManager.Instance.localPlayerController)
-                        {
-                            ChangeOwnershipOfEnemy(targetPlayer.actualClientId);
-                        }                     
-
+                    if (targetPlayer == null || FoundBrackenInMap() || (Vector3.Distance(transform.position, targetPlayer.transform.position) > 20 && !CheckLineOfSightForPosition(targetPlayer.transform.position)))
+                    {
                         LogIfDebugBuild("Stop Target Player");
                         StartSearch(transform.position);
-                        creatureAnimator.SetTrigger("startWalk");
-                        SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
+                        DoAnimationClientRpc("startWalk");
+                        SwitchToBehaviourState((int)State.SearchingForPlayer);
                         MuteStepsClientRpc(false);
                         MuteVoiceClientRpc(true);
                         return;
                     }
 
-                    ChasePlayer();
+                    //SetDestinationToPosition(targetPlayer.transform.position);
+
                     break;
                 case (int)State.ChaseBracken:
                     agent.speed = 15f;
                     // Keep targeting closest player, unless they are over 20 units away and we can't see them.
-                    if (flowermanTarget == null)
+                    if (flowermanTarget == null || flowermanTarget.isEnemyDead)
                     {
                         LogIfDebugBuild("Stop Target Bracken");
                         StartSearch(transform.position);
-                        creatureAnimator.SetTrigger("startWalk");
-                        SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
+                        DoAnimationClientRpc("startWalk");
+                        SwitchToBehaviourState((int)State.SearchingForPlayer);
                         MuteVoiceClientRpc(true);
                         MuteStepsClientRpc(false);
                         return;
                     }
 
-                    ChaseBracken();
+                    SetDestinationToPosition(flowermanTarget.transform.position, checkForPath: false);
                     break;
 
                 case (int)State.AttackPlayer:
-                    agent.speed = 0;
-                    hitCount++;
-                    targetPlayer.DamagePlayer(5);
-
-                    if (hitCount == 21 || targetPlayer.isPlayerDead || isInterrupted == true)
-                    {
-                        LogIfDebugBuild("Release player");
-                        //ReleasePlayerClientRpc();
-
-                        inSpecialAnimationWithPlayer.inSpecialInteractAnimation = false;
-                        inSpecialAnimationWithPlayer.snapToServerPosition = false;
-                        inSpecialAnimationWithPlayer.voiceMuffledByEnemy = false;
-
-                        if (inSpecialAnimationWithPlayer.deadBody != null)
-                        {
-                            inSpecialAnimationWithPlayer.causeOfDeath = CauseOfDeath.Suffocation;
-                            bodyBeingCarried = inSpecialAnimationWithPlayer.deadBody;
-                            bodyBeingCarried.attachedTo = assParent;
-                            bodyBeingCarried.attachedLimb = inSpecialAnimationWithPlayer.deadBody.bodyParts[0];
-                            bodyBeingCarried.matchPositionExactly = true;
-                            carryingPlayerBody = true;
-                        }
-
-                        MuteStepsClientRpc(true);
-                        MuteVoiceClientRpc(true);
-                        FleaPlayer();
-                    }
                     break;
                 case (int)State.AttackBracken:
-                    agent.speed = 0f;
-                    // We don't care about doing anything here
                     break;
 
                 case (int)State.Flea:
@@ -219,16 +239,20 @@ namespace CustomEnnemies
 
                     if (fleaTimer <= 0 || (Vector3.Distance(transform.position, spawnPos) < 1))
                     {
-                        if(carryingPlayerBody)
+                        fleaTimer = 0;
+                        LogIfDebugBuild("Stop fleeing");
+                        if (carryingPlayerBody)
                         {
                             DropPlayerBody();
+                            DropPlayerBodyServerRpc();
                         }
 
                         StartSearch(transform.position);
-                        creatureAnimator.SetTrigger("startWalk");
-                        SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
+                        DoAnimationClientRpc("startWalk");
+                        SwitchToBehaviourState((int)State.SearchingForPlayer);
+
                         MuteVoiceClientRpc(true);
-                        MuteStepsClientRpc(true);
+                        MuteStepsClientRpc(false);
                     }
                     // We don't care about doing anything here
                     break;
@@ -245,9 +269,9 @@ namespace CustomEnnemies
             mostOptimalDistance = 2000f;
             if (FindObjectsOfType<FlowermanAI>().Length > 0)
             {
-                for(int i = 0; i < FindObjectsOfType<FlowermanAI>().Length; i++)
+                for (int i = 0; i < FindObjectsOfType<FlowermanAI>().Length; i++)
                 {
-                    if (FindObjectsOfType<FlowermanAI>()[i].isEnemyDead == false && Vector3.Distance(transform.position, FindObjectsOfType<FlowermanAI>()[i].transform.position) < mostOptimalDistance)
+                    if (!FindObjectsOfType<FlowermanAI>()[i].isEnemyDead && Vector3.Distance(transform.position, FindObjectsOfType<FlowermanAI>()[i].transform.position) < mostOptimalDistance)
                     {
                         flowermanTarget = FindObjectsOfType<FlowermanAI>()[i];
                         mostOptimalDistance = Vector3.Distance(transform.position, FindObjectsOfType<FlowermanAI>()[i].transform.position);
@@ -269,30 +293,53 @@ namespace CustomEnnemies
                 TargetClosestPlayer(bufferDistance: 1.5f, requireLineOfSight: false);
                 range = senseRange;
             }
+
             return targetPlayer != null && Vector3.Distance(transform.position, targetPlayer.transform.position) < range;
         }
 
-        bool TargetClosestPlayerInAnyCase()
+        [ServerRpc]
+        public void DropPlayerBodyServerRpc()
         {
-            mostOptimalDistance = 2000f;
-            targetPlayer = null;
-            for (int i = 0; i < StartOfRound.Instance.connectedPlayersAmount + 1; i++)
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
             {
-                tempDist = Vector3.Distance(transform.position, StartOfRound.Instance.allPlayerScripts[i].transform.position);
-                if (tempDist < mostOptimalDistance)
+                return;
+            }
+            if (__rpc_exec_stage != __RpcExecStage.Server && (networkManager.IsClient || networkManager.IsHost))
+            {
+                if (base.OwnerClientId != networkManager.LocalClientId)
                 {
-                    mostOptimalDistance = tempDist;
-                    targetPlayer = StartOfRound.Instance.allPlayerScripts[i];
+                    if (networkManager.LogLevel <= LogLevel.Normal)
+                    {
+                        LogIfDebugBuild("Only the owner can invoke a ServerRpc that requires ownership!");
+                    }
+                    return;
                 }
             }
-            if (targetPlayer == null) return false;
-            return true;
+            if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
+            {
+                DropPlayerBodyClientRpc();
+            }
+        }
+
+        [ClientRpc]
+        public void DropPlayerBodyClientRpc()
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager != null && networkManager.IsListening)
+            {
+                if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
+                {
+                    DropPlayerBody();
+                }
+            }
         }
 
         private void DropPlayerBody()
         {
             if (carryingPlayerBody)
             {
+                LogIfDebugBuild("Drop player body : " + bodyBeingCarried.playerScript.playerUsername);
                 carryingPlayerBody = false;
                 bodyBeingCarried.matchPositionExactly = false;
                 bodyBeingCarried.attachedTo = null;
@@ -300,43 +347,26 @@ namespace CustomEnnemies
             }
         }
 
-        void ChasePlayer() {
-            if (targetPlayer == null || !IsOwner)
-            {
-                return;
-            }
-
-            StalkPos = targetPlayer.transform.position;
-
-            if (Vector3.Distance(transform.position, targetPlayer.transform.position) < 1.2f){
-               StartCoroutine(AttackPlayer());
-            }
-        }
-
-        void ChaseBracken()
-        {
-            StalkPos = flowermanTarget.transform.position;
-            SetDestinationToPosition(StalkPos, checkForPath: false);
-
-            if (Vector3.Distance(transform.position, flowermanTarget.transform.position) < 2f)
-            {
-                StartCoroutine(AttackBracken());
-            }
-        }
-
-        void FleaPlayer(bool carryingBody = true)
+        IEnumerator FleaPlayer(bool carryingBody = true)
         {
             LogIfDebugBuild("Flea player");
-            creatureAnimator.SetTrigger("startWalk");
-            SwitchToBehaviourClientRpc((int)State.Flea);
+
+            if (attackingPlayerCoroutine != null)
+            {
+                StopCoroutine(attackingPlayerCoroutine);
+            }
+
+            inSpecialAnimation = false;
+            attackingPlayer = false;
+            DoAnimationClientRpc("startWalk");
+
             MuteVoiceClientRpc(true);
             MuteStepsClientRpc(true);
-            SetDestinationToPosition(spawnPos);
-
             fleaTimer = 8f;
 
             if (inSpecialAnimationWithPlayer != null)
             {
+                LogIfDebugBuild("Release player : " + inSpecialAnimationWithPlayer.playerUsername);
                 inSpecialAnimationWithPlayer.inSpecialInteractAnimation = false;
                 inSpecialAnimationWithPlayer.snapToServerPosition = false;
                 inSpecialAnimationWithPlayer.inAnimationWithEnemy = null;
@@ -349,36 +379,163 @@ namespace CustomEnnemies
                     carryingPlayerBody = true;
                 }
             }
+
+            if(carryingBody)
+                yield return new WaitForSeconds(1f);
+
+            if (IsOwner)
+            {
+                agent.enabled = true;
+                isClientCalculatingAI = true;
+            }
+
+            SwitchToBehaviourState((int)State.Flea);
+            SetDestinationToPosition(spawnPos);
         }
 
-        IEnumerator AttackPlayer() {
-            LogIfDebugBuild("attacking : " + targetPlayer.playerUsername);
+        [ServerRpc]
+        void AttackPlayerServerRpc(int playerObjectId)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
+            {
+                if (!attackingPlayer && !carryingPlayerBody)
+                {
+                    isInterrupted = false;
+                    attackingPlayer = true;
+                    inSpecialAnimation = true;
+                    isClientCalculatingAI = false;
+                    inSpecialAnimationWithPlayer = StartOfRound.Instance.allPlayerScripts[playerObjectId];
+                    inSpecialAnimationWithPlayer.inAnimationWithEnemy = this;
+                    transform.position = new Vector3(inSpecialAnimationWithPlayer.transform.position.x, inSpecialAnimationWithPlayer.transform.position.y + 0.5f, inSpecialAnimationWithPlayer.transform.position.z);
+                    AttackPlayerClientRpc(playerObjectId);
+                }
+            }
+        }
 
-            creatureAnimator.SetTrigger("attack");
-            SwitchToBehaviourClientRpc((int)State.AttackPlayer);
+        [ClientRpc]
+        void AttackPlayerClientRpc(int playerObjectId)
+        {
+            LogIfDebugBuild("attack CLIENT rpc"); 
+
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
+            {
+                LogIfDebugBuild("attack test");
+                inSpecialAnimationWithPlayer = StartOfRound.Instance.allPlayerScripts[playerObjectId];
+                inSpecialAnimationWithPlayer.inAnimationWithEnemy = this;
+                //inSpecialAnimationWithPlayer.transform.position = playerParent.transform.position;
+                transform.position = new Vector3(inSpecialAnimationWithPlayer.transform.position.x, inSpecialAnimationWithPlayer.transform.position.y + 0.5f, inSpecialAnimationWithPlayer.transform.position.z);
+                SyncPositionToClients();
+                inSpecialAnimationWithPlayer.SyncBodyPositionWithClients();
+                inSpecialAnimationWithPlayer.DropAllHeldItems();
+                inSpecialAnimationWithPlayer.voiceMuffledByEnemy = true;
+                attackingPlayer = true;
+                inSpecialAnimation = true;
+                agent.enabled = false;
+                inSpecialAnimationWithPlayer.inSpecialInteractAnimation = true;
+                inSpecialAnimationWithPlayer.snapToServerPosition = true;
+                Vector3 vector = ((!inSpecialAnimationWithPlayer.IsOwner) ? inSpecialAnimationWithPlayer.transform.parent.TransformPoint(inSpecialAnimationWithPlayer.serverPlayerPosition) : inSpecialAnimationWithPlayer.transform.position);
+                Vector3 position = base.transform.position;
+                position.y = inSpecialAnimationWithPlayer.transform.position.y;
+                playerRay = new Ray(vector, position - inSpecialAnimationWithPlayer.transform.position);
+                turnCompass.LookAt(vector);
+                position = base.transform.eulerAngles;
+                position.y = turnCompass.eulerAngles.y;
+                base.transform.eulerAngles = position;
+                if (attackingPlayerCoroutine != null)
+                {
+                    StopCoroutine(attackingPlayerCoroutine);
+                }
+                attackingPlayerCoroutine = StartCoroutine(AttackPlayer());
+            }
+        }
+
+        IEnumerator AttackPlayer()
+        {
+            Vector3 endPosition = playerRay.GetPoint(1f);
+            if (endPosition.y < -80f)
+            {
+                Vector3 startPosition = base.transform.position;
+                for (int i = 0; i < 15; i++)
+                {
+                    //  base.transform.position = Vector3.Lerp(startPosition, endPosition, (float)i / 5f);
+                    yield return null;
+                }
+                base.transform.position = endPosition;
+            }
+
+            DoAnimationClientRpc("attack");
+            SwitchToBehaviourState((int)State.AttackPlayer);
             MuteStepsClientRpc(true);
             MuteVoiceClientRpc(true);
 
-            inSpecialAnimationWithPlayer = targetPlayer;
-            inSpecialAnimationWithPlayer.inSpecialInteractAnimation = true;
-            inSpecialAnimationWithPlayer.snapToServerPosition = true;
-            inSpecialAnimationWithPlayer.DropAllHeldItemsClientRpc();
-            inSpecialAnimationWithPlayer.voiceMuffledByEnemy = true;
-
-            // StopPlayerClientRpc();
-
-            agent.velocity = Vector3.zero;
-            hitCount = 0;
-
-            isInterrupted = false;
-
-            Vector3 startingPosition = base.transform.position;
-            for (int i = 0; i < 5; i++)
+            int hitCount = 0;
+            if (inSpecialAnimationWithPlayer != null)
             {
-                base.transform.position = Vector3.Lerp(startingPosition, targetPlayer.transform.position, (float)i / 5f);
-                yield return null;
+                while (hitCount < 10 || inSpecialAnimationWithPlayer.deadBody == null || !isInterrupted)
+                {
+                    yield return new WaitForSeconds(0.5f);
+
+                    inSpecialAnimationWithPlayer.DamagePlayer(15);
+                    hitCount++;
+
+                    LogIfDebugBuild("attacking : " + inSpecialAnimationWithPlayer.playerUsername + " - Hp : " + inSpecialAnimationWithPlayer.health + " - HitCount : " + hitCount);
+                    if ((hitCount >= 10 || inSpecialAnimationWithPlayer.deadBody != null || isInterrupted))
+                        break;
+
+                    yield return null;
+                }
+
+                if (inSpecialAnimationWithPlayer == null || inSpecialAnimationWithPlayer.deadBody == null)
+                {
+                   //LogIfDebugBuild("Flowerman: Player body was not spawned or found within 2 seconds.");
+                    StartCoroutine(FleaPlayer(carryingBody: false));
+                }
+                else
+                {
+                    inSpecialAnimationWithPlayer.snapToServerPosition = false;
+                    inSpecialAnimationWithPlayer.deadBody.causeOfDeath = CauseOfDeath.Suffocation;
+                    inSpecialAnimationWithPlayer.deadBody.bodyBleedingHeavily = true;
+                    StartCoroutine(FleaPlayer());
+                }
             }
-            base.transform.position = targetPlayer.transform.position;
+        }
+
+        [ServerRpc]
+        void AttackBrackenServerRpc(int flowermanId)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
+            {
+                AttackBrackenClientRpc(flowermanId);
+            }
+        }
+
+        [ClientRpc]
+        void AttackBrackenClientRpc(int flowermanId)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
+            {
+               // AttackBracken(flowermanId);
+            }
         }
 
         IEnumerator AttackBracken()
@@ -386,44 +543,53 @@ namespace CustomEnnemies
             LogIfDebugBuild("Attack Bracken");
             SwitchToBehaviourClientRpc((int)State.AttackBracken);
             MuteStepsClientRpc(true);
-            MuteVoiceClientRpc(true);
+            MuteVoiceClientRpc(false);
 
-            FlowermanAI flowermanToKill = null;
-            if (FindObjectsOfType<FlowermanAI>().Length > 0)
-            {
-                for (int i = 0; i < FindObjectsOfType<FlowermanAI>().Length; i++)
-                {
-                    if (FindObjectsOfType<FlowermanAI>()[i].isEnemyDead == false && Vector3.Distance(transform.position, FindObjectsOfType<FlowermanAI>()[i].transform.position) < mostOptimalDistance)
-                    {
-                        flowermanToKill = FindObjectsOfType<FlowermanAI>()[i];
-                        mostOptimalDistance = Vector3.Distance(transform.position, FindObjectsOfType<FlowermanAI>()[i].transform.position);
-                        break;
-                    }
-                }
+           // FlowermanAI flowerman = FindObjectsOfType<FlowermanAI>()[flowermanId];
 
-                if(flowermanToKill != null)
-                    flowermanToKill.KillEnemyOnOwnerClient();
-            }
+            //flowerman.KillEnemyOnOwnerClient();
 
-            yield return new WaitForSeconds(3f);
+            yield return new WaitForSeconds(4f);
 
             StartSearch(transform.position);
-            creatureAnimator.SetTrigger("startWalk");
+            DoAnimationClientRpc("attack");
             SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
             MuteVoiceClientRpc(true);
             MuteStepsClientRpc(false);
         }
 
-        public override void OnCollideWithPlayer(Collider other) {
-            if (timeSinceHittingLocalPlayer < 1f) {
-                return;
-            }
-            PlayerControllerB playerControllerB = MeetsStandardPlayerCollisionConditions(other);
-            if (playerControllerB != null && playerControllerB != targetPlayer)
+        public override void OnCollideWithEnemy(Collider other, EnemyAI collidedEnemy = null)
+        {
+            base.OnCollideWithEnemy(other, collidedEnemy);
+
+            FlowermanAI bracken = other.GetComponentInParent<FlowermanAI>();
+            if (bracken != null && !bracken.isEnemyDead)
             {
-                LogIfDebugBuild("Example Enemy Collision with Player!");
-                timeSinceHittingLocalPlayer = 0f;
-                playerControllerB.DamagePlayer(35);
+                LogIfDebugBuild("Broly Collision with Bracken!");
+
+                bracken.KillEnemyOnOwnerClient();
+                AttackBracken();
+               // AttackBrackenServerRpc(bracken.GetInstanceID());
+            }
+        }
+
+        public override void OnCollideWithPlayer(Collider other)
+        {
+            base.OnCollideWithPlayer(other);
+
+            PlayerControllerB playerControllerB = MeetsStandardPlayerCollisionConditions(other, attackingPlayer || carryingPlayerBody || fleaTimer > 0);
+            if (playerControllerB != null)
+            {
+                LogIfDebugBuild("Broly Collision with Player!");
+                if (!IsOwner)
+                {
+                    //LogIfDebugBuild("Change ownership");
+                   //ChangeOwnershipOfEnemy(playerControllerB.actualClientId);
+                }
+                else
+                {
+                    AttackPlayerServerRpc((int)playerControllerB.playerClientId);
+                }
             }
         }
 
@@ -451,13 +617,14 @@ namespace CustomEnnemies
                 inSpecialAnimationWithPlayer.inSpecialInteractAnimation = false;
                 inSpecialAnimationWithPlayer.snapToServerPosition = false;
                 inSpecialAnimationWithPlayer.voiceMuffledByEnemy = false;
-                //ReleasePlayerClientRpc();
             }
         }
 
-        public override void HitEnemy(int force = 1, PlayerControllerB? playerWhoHit = null, bool playHitSFX = false, int hitID = -1) {
+        public override void HitEnemy(int force = 1, PlayerControllerB? playerWhoHit = null, bool playHitSFX = false, int hitID = -1)
+        {
             base.HitEnemy(force, playerWhoHit, playHitSFX, hitID);
-            if(isEnemyDead){
+            if (isEnemyDead)
+            {
                 return;
             }
 
@@ -467,27 +634,87 @@ namespace CustomEnnemies
                 isInterrupted = true;
             }
 
-            if(currentBehaviourStateIndex == (int)State.SearchingForPlayer && playerWhoHit != null)
+            if (currentBehaviourStateIndex == (int)State.SearchingForPlayer && playerWhoHit != null)
             {
                 LogIfDebugBuild("Chase " + playerWhoHit + " after being hit");
                 targetPlayer = playerWhoHit;
-                creatureAnimator.SetTrigger("chase");
+                DoAnimationClientRpc("chasePlayer");
                 SwitchToBehaviourClientRpc((int)State.ChasePlayer);
                 MuteVoiceClientRpc(false);
                 MuteStepsClientRpc(true);
             }
 
             enemyHP -= force;
-            if (IsOwner) {
-              
-              
-                if (enemyHP <= 0) {
+            if (IsOwner)
+            {
+
+
+                if (enemyHP <= 0)
+                {
                     StopCoroutine(searchCoroutine);
+                    if(attackingPlayerCoroutine != null)
+                        StopCoroutine(attackingPlayerCoroutine);
 
                     MuteVoiceClientRpc(false);
                     MuteStepsClientRpc(true);
                     KillEnemyOnOwnerClient();
                 }
+            }
+        }
+
+        [ServerRpc]
+        public void StartSearchServerRpc(Vector3 pos)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
+            {
+                StartSearchClientRpc(pos);
+            }
+        }
+
+        [ClientRpc]
+        public void StartSearchClientRpc(Vector3 pos)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
+            {
+                StartSearch(pos);
+            }
+        }
+
+        [ServerRpc]
+        public void SetTargetPlayerServerRpc(int playerObjectId)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
+            {
+                SetTargetPlayerClientRpc(playerObjectId);
+            }
+        }
+
+        [ClientRpc]
+        public void SetTargetPlayerClientRpc(int playerObjectId)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
+            {
+                targetPlayer = StartOfRound.Instance.allPlayerScripts[playerObjectId];
             }
         }
 
@@ -500,101 +727,24 @@ namespace CustomEnnemies
         [ClientRpc]
         public void MuteVoiceClientRpc(bool mute)
         {
-            LogIfDebugBuild("Mute voice : " + mute);
+            LogIfDebugBuild("Mute Voice : " + mute);
             creatureVoice.mute = mute;
         }
 
         [ClientRpc]
         public void MuteStepsClientRpc(bool mute)
         {
-            LogIfDebugBuild("Mute voice : " + mute);
+            LogIfDebugBuild("Mute Steps : " + mute);
             stepSound.mute = mute;
         }
 
         [ClientRpc]
-        public void DoAnimationClientRpc(string animationName) {
+        public void DoAnimationClientRpc(string animationName)
+        {
             LogIfDebugBuild($"Animation: {animationName}");
             creatureAnimator.SetTrigger(animationName);
         }
-        /*
-        [ClientRpc]
-        public void PlayerHitClientRpc()
-        {
-            LogIfDebugBuild("HitClientRPC");
-            PlayerControllerB playerControllerB = targetPlayer;
-            if (playerControllerB != null)
-            {
-                LogIfDebugBuild("hit player!");
-                playerControllerB.DamagePlayer(5);
-            }
-        }
-
-        [ClientRpc]
-        public void StopPlayerClientRpc()
-        {
-            PlayerControllerB playerControllerB = targetPlayer;
-            if (playerControllerB != null)
-            {
-                LogIfDebugBuild("StopPlayerClientRpc : " + targetPlayer.playerUsername);
-
-                inSpecialAnimationWithPlayer = playerControllerB;
-                inSpecialAnimationWithPlayer.inSpecialInteractAnimation = true;
-                inSpecialAnimationWithPlayer.snapToServerPosition = true;
-
-                playerControllerB.DropAllHeldItemsClientRpc();
-               // playerControllerB.disableInteract = true;
-               // playerControllerB.disableLookInput = true;
-               //  playerControllerB.disableMoveInput = true;
-                playerControllerB.voiceMuffledByEnemy = true;
-               // baseJumpForce = playerControllerB.jumpForce;
-               // playerControllerB.jumpForce = 0;
-            }
-        }
-
-        [ClientRpc]
-        public void ReleasePlayerClientRpc()
-        {
-            PlayerControllerB playerControllerB = targetPlayer;
-            if (playerControllerB != null)
-            {
-                LogIfDebugBuild("ReleasePlayerClientRpc : " + targetPlayer.playerUsername);
-
-                inSpecialAnimationWithPlayer.inSpecialInteractAnimation = false;
-                inSpecialAnimationWithPlayer.snapToServerPosition = false;
-
-               // playerControllerB.disableLookInput = false;
-               // playerControllerB.disableInteract = false;
-               // playerControllerB.disableMoveInput = false;
-                playerControllerB.voiceMuffledByEnemy = false;
-              //  playerControllerB.redirectToEnemy = null;
-              //  playerControllerB.jumpForce = baseJumpForce;
-            }
-        }
-
-        [ClientRpc]
-        public void DragPlayerBodyClientRpc()
-        {
-            if (carryingPlayerBody)
-            {
-                carryingPlayerBody = false;
-                bodyBeingCarried.matchPositionExactly = false;
-                bodyBeingCarried.attachedTo = null;
-                bodyBeingCarried = null;
-            }
-        }
-
-        [ClientRpc]
-        public void DropPlayerBodyClientRpc()
-        {
-            if (carryingPlayerBody)
-            {
-                carryingPlayerBody = false;
-                bodyBeingCarried.matchPositionExactly = false;
-                bodyBeingCarried.attachedTo = null;
-                bodyBeingCarried = null;
-            }
-        }
-        */
     }
 }
+
 

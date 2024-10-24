@@ -1,0 +1,13 @@
+{
+    "namespace": "PlatypusCrew",
+    "name": "Mall Wizard",
+    "description": "Just a silly little guy",
+    "version_number": "1.0.0",
+    "dependencies": [
+        "BepInEx-BepInExPack-5.4.2100",
+        "Evaisa-HookGenPatcher-0.0.5",
+        "Evaisa-LethalLib-0.16.1"
+    ],
+    "website_url": "https://github.com/thunderstore-io",
+    "FullName": "PlatypusCrew-MallWizard"
+}

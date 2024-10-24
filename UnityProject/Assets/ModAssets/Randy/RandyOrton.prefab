@@ -1157,7 +1157,7 @@ NavMeshAgent:
   m_AngularSpeed: 250
   m_StoppingDistance: 0
   m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
+  m_AutoBraking: 0
   m_AutoRepath: 1
   m_Height: 2.7
   m_BaseOffset: 0.3
@@ -1323,7 +1323,7 @@ MonoBehaviour:
   moveTowardsDestination: 0
   destination: {x: 0, y: 0, z: 0}
   addPlayerVelocityToDestination: 0
-  syncMovementSpeed: 0
+  syncMovementSpeed: 0.22
   timeSinceSpawn: 0
   exitVentAnimationTime: 0
   ventAnimationFinished: 0

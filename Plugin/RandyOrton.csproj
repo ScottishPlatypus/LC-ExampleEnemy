@@ -55,14 +55,24 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="FrenchPlatypus-BrolyCulo\**" />
+    <Compile Remove="FrenchPlatypus-MallWizard\**" />
     <Compile Remove="FrenchPlatypus-RandyOrton\**" />
     <Compile Remove="src_Broly\**" />
+    <Compile Remove="src_Wizard\**" />
     <EmbeddedResource Remove="FrenchPlatypus-BrolyCulo\**" />
+    <EmbeddedResource Remove="FrenchPlatypus-MallWizard\**" />
     <EmbeddedResource Remove="FrenchPlatypus-RandyOrton\**" />
     <EmbeddedResource Remove="src_Broly\**" />
+    <EmbeddedResource Remove="src_Wizard\**" />
     <None Remove="FrenchPlatypus-BrolyCulo\**" />
+    <None Remove="FrenchPlatypus-MallWizard\**" />
     <None Remove="FrenchPlatypus-RandyOrton\**" />
     <None Remove="src_Broly\**" />
+    <None Remove="src_Wizard\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="BACKUP\BrolyAI - Copie.cs" />
+    <Compile Remove="BACKUP\BrolyAI.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -86,6 +96,9 @@
   <!-- Package References - Game Assemblies -->
   <ItemGroup Condition="$(CI) == 'true'">
     <PackageReference Include="LethalCompany.GameLibs.Steam" Version="*-*" Publicize="true" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="BACKUP\" />
   </ItemGroup>
 
   <!-- Allows us to use Rpc methods. See https://github.com/EvaisaDev/UnityNetcodePatcher -->

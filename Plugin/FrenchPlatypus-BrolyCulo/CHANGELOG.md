@@ -11,3 +11,7 @@
 
 - Fixed a bug preventing broly from spawning correctly
 - Added death animation and sound
+
+## 1.2.0
+
+- Fixed Networking issues preventif broly from killing players

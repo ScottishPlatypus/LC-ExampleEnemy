@@ -15,5 +15,9 @@
 
 ## 1.2.0
 
-- Fixed a bug preventing broly from spawning correctly
+- Fixed a bug preventing Randy from spawning correctly
 - Changed death music to be shorter
+
+## 1.3.0
+
+- Fixed Networking issues preventif Randy from killing players

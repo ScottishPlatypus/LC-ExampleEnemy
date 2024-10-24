@@ -49,9 +49,11 @@ namespace CustomEnnemies
             LogIfDebugBuild("Example Enemy Spawned");
             timeSinceHittingLocalPlayer = 0;
             creatureVoice.mute = false;
-            creatureAnimator.SetTrigger("startWalk");
+            DoAnimationClientRpc("startWalk");
             timeSinceNewRandPos = 0;
             positionRandomness = new Vector3(0, 0, 0);
+            agent.acceleration = 15f;
+            agent.angularSpeed = 360f;
             enemyRandom = new System.Random(StartOfRound.Instance.randomMapSeed + thisEnemyIndex);
             isDeadAnimationDone = false;
             // NOTE: Add your behavior states in your enemy script in Unity, where you can configure fun stuff
@@ -77,7 +79,7 @@ namespace CustomEnnemies
             timeSinceNewRandPos += Time.deltaTime;
 
             var state = currentBehaviourStateIndex;
-            if (targetPlayer != null && state == (int)State.ChasePlayerRko || state == (int)State.ChasePlayerPuntKick) {
+            if (targetPlayer != null && (state == (int)State.ChasePlayerRko || state == (int)State.ChasePlayerPuntKick)) {
                 turnCompass.LookAt(targetPlayer.gameplayCamera.transform.position);
                 transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(new Vector3(0f, turnCompass.eulerAngles.y, 0f)), 4f * Time.deltaTime);
             }
@@ -92,6 +94,29 @@ namespace CustomEnnemies
             }
         }
 
+        public override void OnGainedOwnership()
+        {
+            base.OnGainedOwnership();
+
+            if (IsOwner)
+            {
+                LogIfDebugBuild("Get ownership");
+                if (currentBehaviourStateIndex == (int)State.SearchingForPlayer)
+                {
+                    LogIfDebugBuild("restart search coroutine");
+                    StartSearch(transform.position);
+                    SwitchToBehaviourState((int)State.SearchingForPlayer);
+                    MuteVoiceClientRpc(false);
+                    DoAnimationClientRpc("startWalk");
+                }
+
+                if (currentBehaviourStateIndex == (int)State.ChasePlayerRko || currentBehaviourStateIndex == (int)State.ChasePlayerPuntKick)
+                {
+                    FoundClosestPlayerInRange(15f, 5f);
+                }
+            }
+        }
+
         public override void DoAIInterval() {
 
             base.DoAIInterval();
@@ -101,15 +126,24 @@ namespace CustomEnnemies
 
             switch (currentBehaviourStateIndex) {
                 case (int)State.SearchingForPlayer:
-                    if (FoundClosestPlayerInRange(15f) && targetPlayer != null) {
+                    agent.speed = 3f;
+
+                    if (!IsServer && IsOwner)
+                    {
+                        LogIfDebugBuild("Set Ownership back to : " + StartOfRound.Instance.allPlayerScripts[0].playerUsername);
+                        ChangeOwnershipOfEnemy(StartOfRound.Instance.allPlayerScripts[0].actualClientId);
+                        return;
+                    }
+
+                    if (FoundClosestPlayerInRange(15f, 10f) && targetPlayer != null) {
                         if (targetPlayer.health <= 90 || isAgressive)
                         {
                             LogIfDebugBuild("Start Target Player For PuntKick");
                             StopSearch(currentSearch);
                             MuteVoiceClientRpc(true);
 
-                            SwitchToBehaviourClientRpc((int)State.ChasePlayerPuntKick);
-                            creatureAnimator.SetTrigger("puntKickChase");
+                            SwitchToBehaviourState((int)State.ChasePlayerPuntKick);
+                            DoAnimationClientRpc("puntKickChase");
                             return;
                         }
                         else if (!targetPlayer.HasLineOfSightToPosition(transform.position))
@@ -117,59 +151,81 @@ namespace CustomEnnemies
                             LogIfDebugBuild("Start Target Player For Rko");
                             StopSearch(currentSearch);
                             MuteVoiceClientRpc(true);
-                            SwitchToBehaviourClientRpc((int)State.ChasePlayerRko);
-                            creatureAnimator.SetTrigger("rkoChase");
+                            SwitchToBehaviourState((int)State.ChasePlayerRko);
+                            DoAnimationClientRpc("rkoChase");
                             return;
                         }
                     }
                     break;
 
                 case (int)State.ChasePlayerRko:
-                    agent.speed = 10f;
-                    syncMovementSpeed = 10f;
+                    agent.speed = 7f;
+
+                    if (targetPlayer == null)
+                        FoundClosestPlayerInRange(15f, 5f);
+
+
+                    if (IsOwner && targetPlayer != null && targetPlayer != GameNetworkManager.Instance.localPlayerController)
+                    {
+                        ChangeOwnershipOfEnemy(targetPlayer.actualClientId);
+                    }
+
                     // Keep targeting closest player, unless they are over 20 units away and we can't see them.
-                    if (!TargetClosestPlayerInAnyCase() || (Vector3.Distance(transform.position, targetPlayer.transform.position) > 25 && !CheckLineOfSightForPosition(targetPlayer.transform.position))) {
+                    if (targetPlayer == null || targetPlayer.HasLineOfSightToPosition(transform.position) == true || Vector3.Distance(transform.position, targetPlayer.transform.position) > 15f) {
                         LogIfDebugBuild("Stop Target Player");
                         StartSearch(transform.position);
-                        SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
+                        SwitchToBehaviourState((int)State.SearchingForPlayer);
                         MuteVoiceClientRpc(false);
-                        creatureAnimator.SetTrigger("startWalk");
+                        DoAnimationClientRpc("startWalk");
                         return;
                     }
 
                     if (targetPlayer.health <= 90 || isAgressive)
                     {
                         LogIfDebugBuild("Player is down under 50 hp");
-                        SwitchToBehaviourClientRpc((int)State.ChasePlayerPuntKick);
-                        creatureAnimator.SetTrigger("puntKickChase");
-                        return;
-                    }
-                    else if(targetPlayer.HasLineOfSightToPosition(transform.position) == true)
-                    {
-                        LogIfDebugBuild("Player target has sight on Randy");
-                        StartSearch(transform.position);
-                        SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
-                        MuteVoiceClientRpc(false);
-                        creatureAnimator.SetTrigger("startWalk");
+                        SwitchToBehaviourState((int)State.ChasePlayerPuntKick);
+                        DoAnimationClientRpc("puntKickChase");
                         return;
                     }
 
-                    ChasePlayerRko();
+                    SetDestinationToPosition(targetPlayer.transform.position);
+
+                    if (Vector3.Distance(transform.position, targetPlayer.transform.position) < 1f)
+                    {
+                        RkoAttackServerRpc((int)targetPlayer.actualClientId);
+                    }
+
                     break;
                 case (int)State.ChasePlayerPuntKick:
                     agent.speed = 15f;
+
+                    if (targetPlayer == null)
+                        FoundClosestPlayerInRange(15f, 5f);
+
+                    if (IsOwner && targetPlayer != null && targetPlayer != GameNetworkManager.Instance.localPlayerController)
+                    {
+                        ChangeOwnershipOfEnemy(targetPlayer.actualClientId);
+                    }
+
                     // Keep targeting closest player, unless they are over 20 units away and we can't see them.
-                    if (!TargetClosestPlayerInAnyCase() || (Vector3.Distance(transform.position, targetPlayer.transform.position) > 25 && !CheckLineOfSightForPosition(targetPlayer.transform.position)) || (targetPlayer.health > 90 && !isAgressive) )
+                    if (targetPlayer == null || Vector3.Distance(transform.position, targetPlayer.transform.position) > 15 || (targetPlayer.health > 90 && !isAgressive))
                     {
                         LogIfDebugBuild("Stop Target Player");
                         isAgressive = false;
                         StartSearch(transform.position);
-                        SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
+                        SwitchToBehaviourState((int)State.SearchingForPlayer);
                         MuteVoiceClientRpc(false);
-                        creatureAnimator.SetTrigger("startWalk");
+                        DoAnimationClientRpc("startWalk");
                         return;
                     }
-                    ChasePlayerPuntKick();
+
+                    SetDestinationToPosition(targetPlayer.transform.position);
+
+                    if (Vector3.Distance(transform.position, targetPlayer.transform.position) < 3f)
+                    {
+                        PuntKickServerRpc((int)targetPlayer.actualClientId);
+                    }
+
                     break;
 
                 case (int)State.RkoInProgress:
@@ -180,13 +236,11 @@ namespace CustomEnnemies
                 case (int)State.PuntKickInProgress:
                 case (int)State.PuntKickNoSound:
                     agent.speed = 2f;
-                    syncMovementSpeed = 2f;
                     // We don't care about doing anything here
                     break;
 
                 case (int)State.Pin:
                     agent.speed = 0f;
-                    syncMovementSpeed = 0f;
                     // We don't care about doing anything here
                     break;
 
@@ -196,50 +250,17 @@ namespace CustomEnnemies
             }
         }
 
-        bool FoundClosestPlayerInRange(float range) {
-            mostOptimalDistance = range;
-            targetPlayer = null;
-
-            PlayerControllerB[] playersInSight = GetAllPlayersInLineOfSight(45, 60, eye);
-            if (playersInSight != null)
-            {
-                for (int i = 0; i < playersInSight.Length; i++)
-                {
-                    if (playersInSight[i].HasLineOfSightToPosition(transform.position) == false || playersInSight[i].health <= 90 || isAgressive)
-                    {
-                        // LogIfDebugBuild("Player n°" + i + " doesnt have sight on Randy");
-                        targetPlayer = playersInSight[i];
-                        break;
-                    }
-                }
-            }
-
-            agent.speed = 6f;
-            syncMovementSpeed = 6f;
-            for (int i = 0; i < StartOfRound.Instance.connectedPlayersAmount + 1; i++)
-            {
-                if (StartOfRound.Instance.allPlayerScripts[i].HasLineOfSightToPosition(transform.position))
-                {
-                    agent.speed = 2.5f;
-                    syncMovementSpeed = 2.5f;
-                }
-            }
-
-            /*
+        bool FoundClosestPlayerInRange(float range, float senseRange)
+        {
+            TargetClosestPlayer(bufferDistance: 1.5f, requireLineOfSight: true);
             if (targetPlayer == null)
             {
-                for (int i = 0; i < StartOfRound.Instance.connectedPlayersAmount + 1; i++)
-                {
-                    tempDist = Vector3.Distance(transform.position, StartOfRound.Instance.allPlayerScripts[i].transform.position);
-                    if (tempDist < mostOptimalDistance && !StartOfRound.Instance.allPlayerScripts[i].HasLineOfSightToPosition(transform.position))
-                    {
-                        mostOptimalDistance = tempDist;
-                        targetPlayer = StartOfRound.Instance.allPlayerScripts[i];
-                    }
-                }
+                // Couldn't see a player, so we check if a player is in sensing distance instead
+                TargetClosestPlayer(bufferDistance: 1.5f, requireLineOfSight: false);
+                range = senseRange;
             }
-            */
-            return targetPlayer != null;
+
+            return targetPlayer != null && Vector3.Distance(transform.position, targetPlayer.transform.position) < range;
         }
 
         bool TargetClosestPlayerInAnyCase()
@@ -257,124 +278,7 @@ namespace CustomEnnemies
             }
             if (targetPlayer == null) return false;
             return true;
-        }
 
-        void ChasePlayerRko() {
-            // We only run this method for the host because I'm paranoid about randomness not syncing I guess
-            // This is fine because the game does sync the position of the enemy.
-            // Also the attack is a ClientRpc so it should always sync
-            if (targetPlayer == null) {
-                return;
-            }
-
-            StalkPos = targetPlayer.transform.position;
-            SetDestinationToPosition(StalkPos, checkForPath: false);
-           
-            if (Vector3.Distance(transform.position, targetPlayer.transform.position) < 3.5f){
-                StartCoroutine(RkoAttack());
-            }
-        }
-
-        void ChasePlayerPuntKick()
-        {
-            LogIfDebugBuild("TEST V1");
-            // We only run this method for the host because I'm paranoid about randomness not syncing I guess
-            // This is fine because the game does sync the position of the enemy.
-            // Also the attack is a ClientRpc so it should always sync
-            if (targetPlayer == null)
-            {
-                return;
-            }
-
-            StalkPos = targetPlayer.transform.position;
-            SetDestinationToPosition(StalkPos, checkForPath: false);
-
-            if (Vector3.Distance(transform.position, targetPlayer.transform.position) < 4.5f)
-            {
-                StartCoroutine(PuntKick());
-            }
-        }
-
-        IEnumerator RkoAttack() {
-            SwitchToBehaviourClientRpc((int)State.RkoInProgress);
-            StalkPos = targetPlayer.transform.position;
-            SetDestinationToPosition(StalkPos);
-            if(isEnemyDead){
-                yield break;
-            }
-            DoAnimationClientRpc("rko");
-            StopPlayerClientRpc();
-            yield return new WaitForSeconds(0.5f);
-            RkoAttackHitClientRpc();
-            yield return new WaitForSeconds(1.2f);
-
-            DoAnimationClientRpc("pin");
-            SwitchToBehaviourClientRpc((int)State.Pin);
-
-            yield return new WaitForSeconds(3f);
-
-           // DoAnimationClientRpc("pose");
-           // SwitchToBehaviourClientRpc((int)State.Pose);
-
-           // yield return new WaitForSeconds(3f);
-            /*
-            // In case the player has already gone away, we just yield break (basically same as return, but for IEnumerator)
-            if (currentBehaviourStateIndex != (int)State.RkoInProgress){
-                yield break;
-            }
-            */
-            StartSearch(transform.position);
-            SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
-            creatureVoice.mute = false;
-            creatureAnimator.SetTrigger("startWalk");
-        }
-
-        IEnumerator PuntKick()
-        {
-            if (puntKickTimer <= 0f)
-            {
-                SwitchToBehaviourClientRpc((int)State.PuntKickInProgress);
-                puntKickTimer = 7f;
-            }
-            else SwitchToBehaviourClientRpc((int)State.PuntKickNoSound);
-
-            StalkPos = targetPlayer.transform.position;
-            SetDestinationToPosition(StalkPos);
-            if (isEnemyDead)
-            {
-                yield break;
-            }
-            DoAnimationClientRpc("puntKick");
-            yield return new WaitForSeconds(0.2f);
-            if (Vector3.Distance(transform.position, targetPlayer.transform.position) < 3f)
-            {
-                PuntKickHitClientRpc();
-
-                yield return new WaitForSeconds(1.2f);
-
-                DoAnimationClientRpc("pin");
-                SwitchToBehaviourClientRpc((int)State.Pin);
-
-                 yield return new WaitForSeconds(3f);
-
-               // DoAnimationClientRpc("pose");
-               // SwitchToBehaviourClientRpc((int)State.Pose);
-
-               // yield return new WaitForSeconds(2f);
-            }
-            else yield return new WaitForSeconds(2f);
-
-            /*
-            // In case the player has already gone away, we just yield break (basically same as return, but for IEnumerator)
-            if (currentBehaviourStateIndex != (int)State.PuntKickInProgress)
-            {
-                yield break;
-            }
-             */
-            StartSearch(transform.position);
-            SwitchToBehaviourClientRpc((int)State.SearchingForPlayer);
-            creatureVoice.mute = false;
-            creatureAnimator.SetTrigger("startWalk");
         }
 
         public override void OnCollideWithPlayer(Collider other) {
@@ -384,9 +288,9 @@ namespace CustomEnnemies
             PlayerControllerB playerControllerB = MeetsStandardPlayerCollisionConditions(other);
             if (playerControllerB != null && playerControllerB != targetPlayer)
             {
-                LogIfDebugBuild("Example Enemy Collision with Player!");
-                timeSinceHittingLocalPlayer = 0f;
-                playerControllerB.DamagePlayer(100);
+                //LogIfDebugBuild("Example Enemy Collision with Player!");
+               // timeSinceHittingLocalPlayer = 0f;
+               // playerControllerB.DamagePlayer(100);
             }
         }
 
@@ -401,8 +305,8 @@ namespace CustomEnnemies
                 {
                     isAgressive = true;
                     StopSearch(currentSearch);
-                    SwitchToBehaviourClientRpc((int)State.ChasePlayerPuntKick);
-                    creatureAnimator.SetTrigger("puntKickChase");
+                    SwitchToBehaviourState((int)State.ChasePlayerPuntKick);
+                    DoAnimationClientRpc("puntKickChase");
                 }
               
                 if (enemyHP <= 0 && !isEnemyDead) {
@@ -439,22 +343,163 @@ namespace CustomEnnemies
             creatureAnimator.SetTrigger(animationName);
         }
 
+        [ServerRpc]
+        void RkoAttackServerRpc(int playerObjectId)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
+            {
+                inSpecialAnimation = true;
+                isClientCalculatingAI = false;
+                inSpecialAnimationWithPlayer = StartOfRound.Instance.allPlayerScripts[playerObjectId];
+                inSpecialAnimationWithPlayer.inAnimationWithEnemy = this;
+                transform.position = new Vector3(inSpecialAnimationWithPlayer.transform.position.x, inSpecialAnimationWithPlayer.transform.position.y + 0.5f, inSpecialAnimationWithPlayer.transform.position.z);
+                RkoAttackClientRpc(playerObjectId);
+            }
+        }
+
         [ClientRpc]
-        public void RkoAttackHitClientRpc() {
-            LogIfDebugBuild("RkoAttackHitClientRPC");
-            PlayerControllerB playerControllerB = targetPlayer;
-            if (playerControllerB != null)
+        void RkoAttackClientRpc(int playerObjectId)
+        {
+            LogIfDebugBuild("attack CLIENT rpc");
+
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
+            {
+                LogIfDebugBuild("attack test");
+                inSpecialAnimationWithPlayer = StartOfRound.Instance.allPlayerScripts[playerObjectId];
+                inSpecialAnimationWithPlayer.inAnimationWithEnemy = this;
+                //inSpecialAnimationWithPlayer.transform.position = playerParent.transform.position;
+                transform.position = new Vector3(inSpecialAnimationWithPlayer.transform.position.x, inSpecialAnimationWithPlayer.transform.position.y + 0.5f, inSpecialAnimationWithPlayer.transform.position.z);
+                SyncPositionToClients();
+                inSpecialAnimationWithPlayer.SyncBodyPositionWithClients();
+                inSpecialAnimationWithPlayer.voiceMuffledByEnemy = true;
+                inSpecialAnimation = true;
+                agent.enabled = false;
+                inSpecialAnimationWithPlayer.inSpecialInteractAnimation = true;
+                inSpecialAnimationWithPlayer.snapToServerPosition = true;
+                Vector3 vector = ((!inSpecialAnimationWithPlayer.IsOwner) ? inSpecialAnimationWithPlayer.transform.parent.TransformPoint(inSpecialAnimationWithPlayer.serverPlayerPosition) : inSpecialAnimationWithPlayer.transform.position);
+                Vector3 position = base.transform.position;
+                position.y = inSpecialAnimationWithPlayer.transform.position.y;
+                turnCompass.LookAt(vector);
+                position = base.transform.eulerAngles;
+                position.y = turnCompass.eulerAngles.y;
+                base.transform.eulerAngles = position;
+                StartCoroutine(RkoAttack());
+            }
+        }
+
+        IEnumerator RkoAttack()
+        {
+            SwitchToBehaviourState((int)State.RkoInProgress);
+            SetDestinationToPosition(inSpecialAnimationWithPlayer.transform.position);
+            DoAnimationClientRpc("rko");
+            yield return new WaitForSeconds(0.5f);
+         
+            if (inSpecialAnimationWithPlayer != null)
             {
                 LogIfDebugBuild("Rko hit player!");
-                timeSinceHittingLocalPlayer = 0f;
-                playerControllerB.causeOfDeath = CauseOfDeath.Strangulation;
-                playerControllerB.DamagePlayer(400);
+                inSpecialAnimationWithPlayer.DamagePlayer(400);
+                yield return new WaitForSeconds(1.2f);
 
-                playerControllerB.disableMoveInput = false;
-                playerControllerB.voiceMuffledByEnemy = false;
-                playerControllerB.disableLookInput = false;
-                playerControllerB.redirectToEnemy = null;
+                if (inSpecialAnimationWithPlayer != null && inSpecialAnimationWithPlayer.deadBody != null)
+                {
+                    inSpecialAnimationWithPlayer.snapToServerPosition = false;
+                    inSpecialAnimationWithPlayer.deadBody.causeOfDeath = CauseOfDeath.Gravity;
+                    inSpecialAnimationWithPlayer.deadBody.bodyBleedingHeavily = true;
+
+                    DoAnimationClientRpc("pin");
+                    SwitchToBehaviourState((int)State.Pin);
+
+                    yield return new WaitForSeconds(3f);
+                }
             }
+
+            inSpecialAnimation = false;
+
+            StartSearch(transform.position);
+            SwitchToBehaviourState((int)State.SearchingForPlayer);
+            creatureVoice.mute = false;
+            DoAnimationClientRpc("startWalk");
+        }
+
+        [ServerRpc]
+        void PuntKickServerRpc(int playerObjectId)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
+            {
+                inSpecialAnimationWithPlayer = StartOfRound.Instance.allPlayerScripts[playerObjectId];
+                PuntKickClientRpc(playerObjectId);
+            }
+        }
+
+        [ClientRpc]
+        void PuntKickClientRpc(int playerObjectId)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
+            {
+                inSpecialAnimationWithPlayer = StartOfRound.Instance.allPlayerScripts[playerObjectId];
+                StartCoroutine(PuntKick());
+            }
+        }
+
+        IEnumerator PuntKick()
+        {
+            if (puntKickTimer <= 0f)
+            {
+                SwitchToBehaviourState((int)State.PuntKickInProgress);
+                puntKickTimer = 7f;
+            }
+            else SwitchToBehaviourState((int)State.PuntKickNoSound);
+
+            DoAnimationClientRpc("puntKick");
+            yield return new WaitForSeconds(0.2f);
+
+            if (inSpecialAnimationWithPlayer != null && Vector3.Distance(transform.position, inSpecialAnimationWithPlayer.transform.position) < 1.5f)
+            {
+                    LogIfDebugBuild("PuntKick hit player!");
+                    inSpecialAnimationWithPlayer.DamagePlayer(400);
+                    yield return new WaitForSeconds(1.2f);
+
+                    if (inSpecialAnimationWithPlayer != null && inSpecialAnimationWithPlayer.deadBody != null)
+                    {
+                        inSpecialAnimationWithPlayer.snapToServerPosition = false;
+                        inSpecialAnimationWithPlayer.deadBody.causeOfDeath = CauseOfDeath.Gravity;
+                        inSpecialAnimationWithPlayer.deadBody.bodyBleedingHeavily = true;
+                        isAgressive = false;
+
+                        DoAnimationClientRpc("pin");
+                        SwitchToBehaviourState((int)State.Pin);
+
+                        yield return new WaitForSeconds(3f);
+                    }
+            }
+            else yield return new WaitForSeconds(2f);
+
+            inSpecialAnimation = false;
+
+            StartSearch(transform.position);
+            SwitchToBehaviourState((int)State.SearchingForPlayer);
+            creatureVoice.mute = false;
+            DoAnimationClientRpc("startWalk");
         }
 
         [ClientRpc]
@@ -469,25 +514,6 @@ namespace CustomEnnemies
                 playerControllerB.causeOfDeath = CauseOfDeath.Kicking;
                 playerControllerB.DamagePlayer(400);
                 isAgressive = false;
-            }
-        }
-
-        [ClientRpc]
-        public void StopPlayerClientRpc()
-        {
-            LogIfDebugBuild("StopPlayerClientRpc");
-            PlayerControllerB playerControllerB = targetPlayer;
-            if (playerControllerB != null)
-            {
-                Vector3 relativePos = transform.position - playerControllerB.transform.position;
-                Quaternion rotation = Quaternion.LookRotation(relativePos, Vector3.up);
-
-                playerControllerB.redirectToEnemy = this;
-                playerControllerB.syncFullCameraRotation = rotation.eulerAngles;
-                playerControllerB.ForceTurnTowardsTarget();
-                playerControllerB.disableMoveInput = true;
-                playerControllerB.voiceMuffledByEnemy = true;
-                playerControllerB.disableLookInput = true;
             }
         }
     }
