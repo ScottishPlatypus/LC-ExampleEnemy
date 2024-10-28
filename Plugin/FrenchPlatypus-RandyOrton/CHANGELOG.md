@@ -20,4 +20,9 @@
 
 ## 1.3.0
 
-- Fixed Networking issues preventif Randy from killing players
+- Fixed Networking issues preventing Randy from killing players
+
+## 1.3.1
+
+- Reduced attack range of Randy 
+- Increased Randy speed when chasing player

@@ -225,6 +225,7 @@ namespace CustomEnnemies
             stick.grabbableToEnemies = true;
             stick.grabbable = true;
             stick.transform.position = dropPosition;
+            stick.isInFactory = true;
         }
 
         [ServerRpc]

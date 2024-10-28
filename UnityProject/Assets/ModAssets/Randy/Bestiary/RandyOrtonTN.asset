@@ -45,6 +45,6 @@ MonoBehaviour:
   playClip: {fileID: 0}
   playSyncedClip: 2
   displayTexture: {fileID: 0}
-  displayVideo: {fileID: 32900000, guid: deda6f19590e5d7438a632d140681b26, type: 3}
+  displayVideo: {fileID: 32900000, guid: 723d5abf02c854246968685e9d851976, type: 3}
   loadImageSlowly: 1
   persistentImage: 0

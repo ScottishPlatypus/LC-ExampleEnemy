@@ -131,6 +131,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1070755428485192315, guid: 5215934940adf014eb03e0710cb48132,
+        type: 3}
+      propertyPath: scrapPersistedThroughRounds
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4588246755077114956, guid: 5215934940adf014eb03e0710cb48132,
         type: 3}
       propertyPath: GlobalObjectIdHash

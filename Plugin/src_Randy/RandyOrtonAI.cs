@@ -159,7 +159,7 @@ namespace CustomEnnemies
                     break;
 
                 case (int)State.ChasePlayerRko:
-                    agent.speed = 7f;
+                    agent.speed = 9f;
 
                     if (targetPlayer == null)
                         FoundClosestPlayerInRange(15f, 5f);
@@ -420,6 +420,13 @@ namespace CustomEnnemies
                     SwitchToBehaviourState((int)State.Pin);
 
                     yield return new WaitForSeconds(3f);
+                }
+
+                if(inSpecialAnimationWithPlayer != null)
+                {
+                    inSpecialAnimationWithPlayer.inSpecialInteractAnimation = false;
+                    inSpecialAnimationWithPlayer.snapToServerPosition = false;
+                    inSpecialAnimationWithPlayer.inAnimationWithEnemy = null;
                 }
             }
 

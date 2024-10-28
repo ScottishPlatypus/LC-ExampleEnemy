@@ -1,8 +1,8 @@
 {
     "namespace": "PlatypusCrew",
-    "name": "Mall Wizard",
+    "name": "MallWizard",
     "description": "Just a silly little guy",
-    "version_number": "1.0.0",
+    "version_number": "1.1.0",
     "dependencies": [
         "BepInEx-BepInExPack-5.4.2100",
         "Evaisa-HookGenPatcher-0.0.5",

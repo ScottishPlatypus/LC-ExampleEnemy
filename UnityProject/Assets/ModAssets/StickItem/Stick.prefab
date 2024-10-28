@@ -141,7 +141,7 @@ MonoBehaviour:
   isBeingUsed: 0
   isInElevator: 0
   isInShipRoom: 0
-  isInFactory: 1
+  isInFactory: 0
   useCooldown: 0
   currentUseCooldown: 0
   itemProperties: {fileID: 11400000, guid: 7377d6f826151034294b5c0a03422b35, type: 2}
@@ -164,10 +164,8 @@ MonoBehaviour:
   stickAudio: {fileID: 2300835240883626624}
   previousPlayerHeldBy: {fileID: 0}
   stickHitForce: 0
-  hitSFX:
-  - {fileID: 8300000, guid: 7b3dd7a59bfb28c4f8a4c9f0a129da88, type: 3}
-  swingSFX:
-  - {fileID: 8300000, guid: 131975f91d95b7e449be05fdba699d4d, type: 3}
+  hitSFX: {fileID: 8300000, guid: 7b3dd7a59bfb28c4f8a4c9f0a129da88, type: 3}
+  swingSFX: {fileID: 8300000, guid: 131975f91d95b7e449be05fdba699d4d, type: 3}
 --- !u!65 &6723359554928026953
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -202,7 +200,7 @@ AudioSource:
     type: 2}
   m_audioClip: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.3
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -211,7 +209,7 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 1
-  MaxDistance: 500
+  MaxDistance: 20
   Pan2D: 0
   rolloffMode: 0
   BypassEffects: 0

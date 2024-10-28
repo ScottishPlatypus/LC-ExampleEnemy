@@ -36,17 +36,17 @@ MonoBehaviour:
   batteryUsage: 0
   automaticallySetUsingPower: 0
   itemIcon: {fileID: 21300000, guid: 137387801c6448147863f4906fe4b6a2, type: 3}
-  grabAnim: GrabItem1
-  useAnim: UseHeldItem1
+  grabAnim: HoldKnife
+  useAnim: 
   pocketAnim: 
   throwAnim: 
   grabAnimationTime: 0
-  grabSFX: {fileID: 0}
-  dropSFX: {fileID: 0}
-  pocketSFX: {fileID: 0}
+  grabSFX: {fileID: 8300000, guid: c82ee7897de59cc40a6923be9c5ce93e, type: 3}
+  dropSFX: {fileID: 8300000, guid: c82ee7897de59cc40a6923be9c5ce93e, type: 3}
+  pocketSFX: {fileID: 8300000, guid: c82ee7897de59cc40a6923be9c5ce93e, type: 3}
   throwSFX: {fileID: 0}
   syncGrabFunction: 1
-  syncUseFunction: 0
+  syncUseFunction: 1
   syncDiscardFunction: 1
   syncInteractLRFunction: 0
   saveItemVariable: 0
@@ -57,7 +57,7 @@ MonoBehaviour:
   allowDroppingAheadOfPlayer: 0
   restingRotation: {x: 0, y: 90, z: 90}
   rotationOffset: {x: -64.21, y: 41.792, z: 233.715}
-  positionOffset: {x: 0, y: 0.06, z: 0}
+  positionOffset: {x: 0, y: 0.1, z: 0}
   meshOffset: 1
   meshVariants: []
   materialVariants: []

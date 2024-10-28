@@ -15,3 +15,7 @@
 ## 1.2.0
 
 - Fixed Networking issues preventif broly from killing players
+
+## 1.2.1
+
+- Changed Terminal animation

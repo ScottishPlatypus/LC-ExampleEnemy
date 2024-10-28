@@ -186,7 +186,7 @@ namespace CustomEnnemies
 
                     break;
                 case (int)State.ChasePlayer:
-                    agent.speed = 8f;
+                    agent.speed = 7f;
 
                     if (targetPlayer == null)
                         FoundClosestPlayerInRange(20f, 4f);
@@ -198,7 +198,7 @@ namespace CustomEnnemies
                     }
 
                     // Keep targeting closest player, unless they are over 20 units away and we can't see them.
-                    if (targetPlayer == null || FoundBrackenInMap() || (Vector3.Distance(transform.position, targetPlayer.transform.position) > 20 && !CheckLineOfSightForPosition(targetPlayer.transform.position)))
+                    if (targetPlayer == null || FoundBrackenInMap() || (Vector3.Distance(transform.position, targetPlayer.transform.position) > 12 && !CheckLineOfSightForPosition(targetPlayer.transform.position)))
                     {
                         LogIfDebugBuild("Stop Target Player");
                         StartSearch(transform.position);
@@ -230,8 +230,10 @@ namespace CustomEnnemies
                     break;
 
                 case (int)State.AttackPlayer:
+                    agent.speed = 2f;
                     break;
                 case (int)State.AttackBracken:
+                    agent.speed = 2f;
                     break;
 
                 case (int)State.Flea:
@@ -377,6 +379,7 @@ namespace CustomEnnemies
                     bodyBeingCarried.attachedLimb = inSpecialAnimationWithPlayer.deadBody.bodyParts[0];
                     bodyBeingCarried.matchPositionExactly = true;
                     carryingPlayerBody = true;
+
                 }
             }
 
@@ -429,6 +432,7 @@ namespace CustomEnnemies
             }
             if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
             {
+                isInterrupted = false;
                 LogIfDebugBuild("attack test");
                 inSpecialAnimationWithPlayer = StartOfRound.Instance.allPlayerScripts[playerObjectId];
                 inSpecialAnimationWithPlayer.inAnimationWithEnemy = this;
@@ -477,6 +481,10 @@ namespace CustomEnnemies
             SwitchToBehaviourState((int)State.AttackPlayer);
             MuteStepsClientRpc(true);
             MuteVoiceClientRpc(true);
+
+            yield return new WaitForSeconds(0.1f);
+
+            InterruptClientRpc(false);
 
             int hitCount = 0;
             if (inSpecialAnimationWithPlayer != null)
@@ -631,7 +639,7 @@ namespace CustomEnnemies
             if (!isInterrupted)
             {
                 LogIfDebugBuild("Interrupt enemy");
-                isInterrupted = true;
+                InterruptClientRpc(true);
             }
 
             if (currentBehaviourStateIndex == (int)State.SearchingForPlayer && playerWhoHit != null)
@@ -659,6 +667,20 @@ namespace CustomEnnemies
                     MuteStepsClientRpc(true);
                     KillEnemyOnOwnerClient();
                 }
+            }
+        }
+
+        [ClientRpc]
+        public void InterruptClientRpc(bool interrupt)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
+            {
+                isInterrupted = interrupt;
             }
         }
 
