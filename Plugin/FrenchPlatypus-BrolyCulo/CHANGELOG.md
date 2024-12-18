@@ -19,3 +19,8 @@
 ## 1.2.1
 
 - Changed Terminal animation
+
+## 1.2.2
+
+- Chase speed has beed slowed down
+- Fixing some position sync issues

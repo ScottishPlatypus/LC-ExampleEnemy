@@ -26,3 +26,7 @@
 
 - Reduced attack range of Randy 
 - Increased Randy speed when chasing player
+
+## 1.3.2
+
+- He no longer cancels his death music when killed while in attacking animation

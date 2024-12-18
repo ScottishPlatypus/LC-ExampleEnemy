@@ -1,8 +1,8 @@
 {
     "namespace": "PlatypusCrew",
     "name": "BrolyCulo",
-    "description": "El guerrero legendario",
-    "version_number": "1.2.1",
+    "description": "Adds El guerrero legendario Broly Culo as an enemy",
+    "version_number": "1.2.2",
     "dependencies": [
         "BepInEx-BepInExPack-5.4.2100",
         "Evaisa-HookGenPatcher-0.0.5",

@@ -46,12 +46,11 @@ public class StickItem : GrabbableObject
 			previousPlayerHeldBy = playerHeldBy;
 			if (playerHeldBy.IsOwner)
 			{
+				stickAudio.PlayOneShot(swingSFX);
 				playerHeldBy.playerBodyAnimator.SetTrigger("UseHeldItem1");
 			}
-		}
-		if (base.IsOwner)
-		{
-			HitStickClientRpc();
+
+			HitStickServerRpc();
 		}
 	}
 
@@ -75,16 +74,25 @@ public class StickItem : GrabbableObject
 		base.EquipItem();
 	}
 
+	[ServerRpc]
+	public void HitStickServerRpc(bool cancel = false)
+	{
+		NetworkManager networkManager = base.NetworkManager;
+		if ((object)networkManager == null || !networkManager.IsListening)
+		{
+			return;
+		}
+		if (__rpc_exec_stage == __RpcExecStage.Server)
+		{
+			HitStickClientRpc(cancel);
+		}
+	}
+
+
 	[ClientRpc]
 	public void HitStickClientRpc(bool cancel = false)
 	{
-		Debug.Log("use stick");
 		stickAudio.PlayOneShot(swingSFX);
-		if(IsServer)
-			SwingStickServerRpc();
-
-		Debug.Log("PlayerHeldBy : " + playerHeldBy != null);
-		Debug.Log(playerHeldBy.GetComponent<BoxCollider>().size.y);
 
 		if (playerHeldBy == null)
         {
@@ -93,20 +101,19 @@ public class StickItem : GrabbableObject
 		}
 
 		previousPlayerHeldBy = playerHeldBy;
+		Debug.Log("held by : " + previousPlayerHeldBy.playerUsername);
 		previousPlayerHeldBy.activatingItem = false;
 		bool flag = false;
 		bool flag2 = false;
 		int num = -1;
 		if (!cancel && Time.realtimeSinceStartup - timeAtLastDamageDealt > 0.2f && previousPlayerHeldBy != null)
 		{
-			Debug.Log("Cast sphere");
 			previousPlayerHeldBy.twoHanded = false;
-			objectsHitByStick = Physics.SphereCastAll(previousPlayerHeldBy.gameplayCamera.transform.position + previousPlayerHeldBy.gameplayCamera.transform.right * 0.1f, 0.3f, previousPlayerHeldBy.gameplayCamera.transform.forward, 0.75f, stickMask, QueryTriggerInteraction.Collide);
+			objectsHitByStick = Physics.SphereCastAll(previousPlayerHeldBy.gameplayCamera.transform.position + previousPlayerHeldBy.gameplayCamera.transform.right * 0.1f, 0.5f, previousPlayerHeldBy.gameplayCamera.transform.forward, 0.75f, stickMask, QueryTriggerInteraction.Collide);
 			objectsHitByStickList = objectsHitByStick.OrderBy((RaycastHit x) => x.distance).ToList();
 			List<EnemyAI> list = new List<EnemyAI>();
 			for (int i = 0; i < objectsHitByStickList.Count; i++)
 			{
-				Debug.Log(objectsHitByStickList[i].transform.gameObject.name);
 				if (objectsHitByStickList[i].transform.gameObject.layer == 8 || objectsHitByStickList[i].transform.gameObject.layer == 11)
 				{
 					Debug.Log("Hit surface");
@@ -129,11 +136,15 @@ public class StickItem : GrabbableObject
 						PlayerControllerB playerHit = objectsHitByStickList[i].transform.GetComponent<PlayerControllerB>();
 						if(playerHit != null && playerHit != previousPlayerHeldBy)
                         {
+
+							float amp = IsOwner ? 6 : 12;
 							Debug.Log("hit player : " + playerHit.playerUsername);
-							Vector3 hitPos = new Vector3(previousPlayerHeldBy.transform.position.x, playerHeldBy.GetComponent<BoxCollider>().transform.position.y - 1f, previousPlayerHeldBy.transform.position.z);
+							Vector3 hitPos = new Vector3(previousPlayerHeldBy.transform.position.x, previousPlayerHeldBy.GetComponent<BoxCollider>().transform.position.y - 2f, previousPlayerHeldBy.transform.position.z);
 							float num3 = Vector3.Distance(playerHit.transform.position, hitPos);
-							Vector3 vector = Vector3.Normalize(playerHit.transform.position + Vector3.up * num3 - hitPos) / (num3 * 0.35f) * 2f;
+							Vector3 vector = Vector3.Normalize(playerHit.transform.position + Vector3.up * num3 - hitPos) / (num3 * 0.35f) * amp;
 							playerHit.externalForceAutoFade += vector;
+
+							break;
 						}
 
 					}
@@ -144,12 +155,7 @@ public class StickItem : GrabbableObject
 				}
 			}
 		}
-		else
-        {
-			Debug.Log("Time : " + (Time.realtimeSinceStartup - timeAtLastDamageDealt));
-			Debug.Log("cancel : " + cancel);
-			Debug.Log("previousPlayerHeldBy: " + previousPlayerHeldBy != null);
-		}
+		
 		if (flag)
 		{
 			//RoundManager.PlayRandomClip(stickAudio, hitSFX);
@@ -159,7 +165,6 @@ public class StickItem : GrabbableObject
 				stickAudio.PlayOneShot(StartOfRound.Instance.footstepSurfaces[num].hitSurfaceSFX);
 				WalkieTalkie.TransmitOneShotAudio(stickAudio, StartOfRound.Instance.footstepSurfaces[num].hitSurfaceSFX);
 			}
-			HitStickServerRpc(num);
 		}
 	}
 
@@ -168,94 +173,6 @@ public class StickItem : GrabbableObject
 	{
 		PlayerControllerB playerHit = StartOfRound.Instance.allPlayerScripts[playerIndex];
 	
-	}
-
-	[ServerRpc]
-	public void SwingStickServerRpc()
-	{
-		NetworkManager networkManager = base.NetworkManager;
-		if ((object)networkManager == null || !networkManager.IsListening)
-		{
-			return;
-		}
-		if (__rpc_exec_stage != __RpcExecStage.Server && (networkManager.IsClient || networkManager.IsHost))
-		{
-			if (base.OwnerClientId != networkManager.LocalClientId)
-			{
-				if (networkManager.LogLevel <= LogLevel.Normal)
-				{
-					Debug.LogError("Only the owner can invoke a ServerRpc that requires ownership!");
-				}
-				return;
-			}
-		}
-		if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
-		{
-			SwingStickClientRpc();
-		}
-	}
-
-	[ClientRpc]
-	public void SwingStickClientRpc()
-	{
-		NetworkManager networkManager = base.NetworkManager;
-		if ((object)networkManager == null || !networkManager.IsListening)
-		{
-			return;
-		}
-		if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost) && !base.IsOwner)
-		{
-			stickAudio.PlayOneShot(swingSFX);
-		}
-	}
-
-	[ServerRpc]
-	public void HitStickServerRpc(int hitSurfaceID)
-	{
-		NetworkManager networkManager = base.NetworkManager;
-		if ((object)networkManager == null || !networkManager.IsListening)
-		{
-			return;
-		}
-		if (__rpc_exec_stage != __RpcExecStage.Server && (networkManager.IsClient || networkManager.IsHost))
-		{
-			if (base.OwnerClientId != networkManager.LocalClientId)
-			{
-				if (networkManager.LogLevel <= LogLevel.Normal)
-				{
-					Debug.LogError("Only the owner can invoke a ServerRpc that requires ownership!");
-				}
-				return;
-			}
-		}
-		if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
-		{
-			HitStickClientRpc(hitSurfaceID);
-		}
-	}
-
-	[ClientRpc]
-	public void HitStickClientRpc(int hitSurfaceID)
-	{
-		NetworkManager networkManager = base.NetworkManager;
-		if ((object)networkManager == null || !networkManager.IsListening)
-		{
-			return;
-		}
-		if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost) && !base.IsOwner)
-		{
-			//RoundManager.PlayRandomClip(stickAudio, hitSFX);
-			if (hitSurfaceID != -1)
-			{
-				HitSurfaceWithStick(hitSurfaceID);
-			}
-		}
-	}
-
-	private void HitSurfaceWithStick(int hitSurfaceID)
-	{
-		stickAudio.PlayOneShot(StartOfRound.Instance.footstepSurfaces[hitSurfaceID].hitSurfaceSFX);
-		WalkieTalkie.TransmitOneShotAudio(stickAudio, StartOfRound.Instance.footstepSurfaces[hitSurfaceID].hitSurfaceSFX);
 	}
 
 	protected override void __initializeVariables()

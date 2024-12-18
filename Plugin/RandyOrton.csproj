@@ -7,7 +7,7 @@
 		<!-- This is the name of your mod. This will be used by tcli when building our Thunderstore package. -->
     <Product>RandyOrton</Product>
     <!-- Change to whatever version you're currently on. This will be used by tcli when building our Thunderstore package. -->
-    <Version>1.3.1</Version>
+    <Version>1.3.2</Version>
   </PropertyGroup>
 
   <!-- Thunderstore CLI stuff -->
@@ -58,16 +58,19 @@
     <Compile Remove="FrenchPlatypus-MallWizard\**" />
     <Compile Remove="FrenchPlatypus-RandyOrton\**" />
     <Compile Remove="src_Broly\**" />
+    <Compile Remove="src_Scraps\**" />
     <Compile Remove="src_Wizard\**" />
     <EmbeddedResource Remove="FrenchPlatypus-BrolyCulo\**" />
     <EmbeddedResource Remove="FrenchPlatypus-MallWizard\**" />
     <EmbeddedResource Remove="FrenchPlatypus-RandyOrton\**" />
     <EmbeddedResource Remove="src_Broly\**" />
+    <EmbeddedResource Remove="src_Scraps\**" />
     <EmbeddedResource Remove="src_Wizard\**" />
     <None Remove="FrenchPlatypus-BrolyCulo\**" />
     <None Remove="FrenchPlatypus-MallWizard\**" />
     <None Remove="FrenchPlatypus-RandyOrton\**" />
     <None Remove="src_Broly\**" />
+    <None Remove="src_Scraps\**" />
     <None Remove="src_Wizard\**" />
   </ItemGroup>
   <ItemGroup>

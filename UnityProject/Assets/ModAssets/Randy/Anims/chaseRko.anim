@@ -19,9 +19,9 @@ AnimationClip:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: {x: -78.74, y: 0, z: 0}
-        inSlope: {x: 0, y: 0, z: 0}
-        outSlope: {x: 0, y: 0, z: 0}
+        value: {x: -63.14, y: 0, z: 0}
+        inSlope: {x: -15.599998, y: 0, z: 0}
+        outSlope: {x: -15.599998, y: 0, z: 0}
         tangentMode: 0
         weightedMode: 0
         inWeight: {x: 0.33333334, y: 0.33333334, z: 0.33333334}
@@ -37,9 +37,9 @@ AnimationClip:
         outWeight: {x: 0.33333334, y: 0.33333334, z: 0.33333334}
       - serializedVersion: 3
         time: 2
-        value: {x: -78.74, y: 0, z: 0}
-        inSlope: {x: 0, y: 0, z: 0}
-        outSlope: {x: 0, y: 0, z: 0}
+        value: {x: -63.14, y: 0, z: 0}
+        inSlope: {x: 15.599998, y: 0, z: 0}
+        outSlope: {x: 15.599998, y: 0, z: 0}
         tangentMode: 0
         weightedMode: 0
         inWeight: {x: 0.33333334, y: 0.33333334, z: 0.33333334}
@@ -1386,6 +1386,15 @@ AnimationClip:
       isIntCurve: 0
       isSerializeReferenceCurve: 0
     - serializedVersion: 2
+      path: 2104266162
+      attribute: 4
+      script: {fileID: 0}
+      typeID: 4
+      customType: 4
+      isPPtrCurve: 0
+      isIntCurve: 0
+      isSerializeReferenceCurve: 0
+    - serializedVersion: 2
       path: 2378596772
       attribute: 4
       script: {fileID: 0}
@@ -1584,15 +1593,6 @@ AnimationClip:
       isIntCurve: 0
       isSerializeReferenceCurve: 0
     - serializedVersion: 2
-      path: 2104266162
-      attribute: 4
-      script: {fileID: 0}
-      typeID: 4
-      customType: 4
-      isPPtrCurve: 0
-      isIntCurve: 0
-      isSerializeReferenceCurve: 0
-    - serializedVersion: 2
       path: 653876254
       attribute: 4
       script: {fileID: 0}
@@ -1782,9 +1782,9 @@ AnimationClip:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: -78.74
-        inSlope: 0
-        outSlope: 0
+        value: -63.14
+        inSlope: -15.599998
+        outSlope: -15.599998
         tangentMode: 34
         weightedMode: 0
         inWeight: 0.33333334
@@ -1800,9 +1800,9 @@ AnimationClip:
         outWeight: 0.33333334
       - serializedVersion: 3
         time: 2
-        value: -78.74
-        inSlope: 0
-        outSlope: 0
+        value: -63.14
+        inSlope: 15.599998
+        outSlope: 15.599998
         tangentMode: 34
         weightedMode: 0
         inWeight: 0.33333334
@@ -6384,7 +6384,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.z
-    path: Armature
+    path: Armature/Hips
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -6396,7 +6396,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.y
-    path: Armature
+    path: Armature/Hips
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -6408,7 +6408,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.x
-    path: Armature
+    path: Armature/Hips
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -6852,7 +6852,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.x
-    path: Armature/Hips
+    path: Armature
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -6864,7 +6864,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.y
-    path: Armature/Hips
+    path: Armature
     classID: 4
     script: {fileID: 0}
     flags: 0
@@ -6876,7 +6876,7 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     attribute: m_LocalEulerAngles.z
-    path: Armature/Hips
+    path: Armature
     classID: 4
     script: {fileID: 0}
     flags: 0

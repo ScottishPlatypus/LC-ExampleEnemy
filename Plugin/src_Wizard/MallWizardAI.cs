@@ -39,6 +39,8 @@ namespace CustomEnnemies
 
         public GameObject wizardPrefab;
 
+        float searchTimer;
+
         bool isClone = false;
 
         enum State
@@ -77,6 +79,7 @@ namespace CustomEnnemies
             // like a voice clip or an sfx clip to play when changing to that specific behavior state.
             currentBehaviourStateIndex = (int)State.SearchingForPlayer;
             // We make the enemy start searching. This will make it start wandering around.
+            searchTimer = 10f;
             StartSearch(transform.position);
             StartCoroutine(GenerateWizards());
         }
@@ -311,6 +314,11 @@ namespace CustomEnnemies
                     LogIfDebugBuild("can chase player again");
                 }
             }
+
+            if(searchTimer > 0f && state == (int)State.SearchingForPlayer)
+            {
+                searchTimer -= Time.deltaTime;
+            }
         }
 
         public override void OnGainedOwnership()
@@ -325,6 +333,7 @@ namespace CustomEnnemies
                     LogIfDebugBuild("restart search coroutine");
 
                     DoAnimationClientRpc("startWalk");
+                    searchTimer = 10f;
                     StartSearch(transform.position);
                 }
 
@@ -363,6 +372,12 @@ namespace CustomEnnemies
                         SwitchToBehaviourState((int)State.ChasePlayer);
                     }
 
+                    if(searchTimer <= 0f)
+                    {
+                        searchTimer = 10f;
+                        StartSearch(transform.position);
+                    }
+
                     break;
                 case (int)State.ChasePlayer:
                     agent.speed = 18f;
@@ -379,6 +394,7 @@ namespace CustomEnnemies
                     if (!TargetClosestPlayerInAnyCase() || targetPlayer == null || timeSinceHittingPlayer > 0f || (Vector3.Distance(transform.position, targetPlayer.transform.position) > 10 && !CheckLineOfSightForPosition(targetPlayer.transform.position)))
                     {
                         LogIfDebugBuild("Stop Target Player");
+                        searchTimer = 10f;
                         StartSearch(transform.position);
                         DoAnimationClientRpc("startWalk");
                         SwitchToBehaviourState((int)State.SearchingForPlayer);
@@ -446,6 +462,7 @@ namespace CustomEnnemies
 
             attackingPlayer = false;
 
+            searchTimer = 10f;
             StartSearch(transform.position);
             DoAnimationClientRpc("startWalk");
             SwitchToBehaviourState((int)State.SearchingForPlayer);
@@ -518,8 +535,6 @@ namespace CustomEnnemies
             enemyHP -= force;
             if (IsOwner)
             {
-
-
                 if (enemyHP <= 0)
                 {
                     StopCoroutine(searchCoroutine);

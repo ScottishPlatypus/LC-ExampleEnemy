@@ -20,6 +20,7 @@ namespace CustomEnnemies
 #pragma warning disable 0649
         public Transform turnCompass = null!;
         public Transform attackArea = null!;
+        public AudioSource deathMusic;
 #pragma warning restore 0649
         float timeSinceHittingLocalPlayer;
         float timeSinceNewRandPos;
@@ -101,7 +102,7 @@ namespace CustomEnnemies
             if (IsOwner)
             {
                 LogIfDebugBuild("Get ownership");
-                if (currentBehaviourStateIndex == (int)State.SearchingForPlayer)
+                if (currentBehaviourStateIndex == (int)State.SearchingForPlayer && !isEnemyDead)
                 {
                     LogIfDebugBuild("restart search coroutine");
                     StartSearch(transform.position);
@@ -126,7 +127,7 @@ namespace CustomEnnemies
 
             switch (currentBehaviourStateIndex) {
                 case (int)State.SearchingForPlayer:
-                    agent.speed = 3f;
+                    agent.speed = 2f;
 
                     if (!IsServer && IsOwner)
                     {
@@ -159,7 +160,7 @@ namespace CustomEnnemies
                     break;
 
                 case (int)State.ChasePlayerRko:
-                    agent.speed = 9f;
+                    agent.speed = 6f;
 
                     if (targetPlayer == null)
                         FoundClosestPlayerInRange(15f, 5f);
@@ -180,7 +181,7 @@ namespace CustomEnnemies
                         return;
                     }
 
-                    if (targetPlayer.health <= 90 || isAgressive)
+                    if (targetPlayer.health <= 70 || isAgressive)
                     {
                         LogIfDebugBuild("Player is down under 50 hp");
                         SwitchToBehaviourState((int)State.ChasePlayerPuntKick);
@@ -190,7 +191,7 @@ namespace CustomEnnemies
 
                     SetDestinationToPosition(targetPlayer.transform.position);
 
-                    if (Vector3.Distance(transform.position, targetPlayer.transform.position) < 1f)
+                    if (Vector3.Distance(transform.position, targetPlayer.transform.position) < 0.8f)
                     {
                         RkoAttackServerRpc((int)targetPlayer.actualClientId);
                     }
@@ -208,7 +209,7 @@ namespace CustomEnnemies
                     }
 
                     // Keep targeting closest player, unless they are over 20 units away and we can't see them.
-                    if (targetPlayer == null || Vector3.Distance(transform.position, targetPlayer.transform.position) > 15 || (targetPlayer.health > 90 && !isAgressive))
+                    if (targetPlayer == null || Vector3.Distance(transform.position, targetPlayer.transform.position) > 15 || (targetPlayer.health > 70 && !isAgressive))
                     {
                         LogIfDebugBuild("Stop Target Player");
                         isAgressive = false;
@@ -309,7 +310,7 @@ namespace CustomEnnemies
                     DoAnimationClientRpc("puntKickChase");
                 }
               
-                if (enemyHP <= 0 && !isEnemyDead) {
+                if (enemyHP <= 0) {
                     // Our death sound will be played through creatureVoice when KillEnemy() is called.
                     // KillEnemy() will also attempt to call creatureAnimator.SetTrigger("KillEnemy"),
                     // so we don't need to call a death animation ourselves.
@@ -326,8 +327,8 @@ namespace CustomEnnemies
         [ClientRpc]
         public void PlayDeathSoundClientRpc()
         {
-            creatureVoice.Stop();
-            creatureVoice.PlayOneShot(dieSFX);
+            creatureVoice.mute = true;
+            deathMusic.Play();
         }
 
         [ClientRpc]
@@ -351,7 +352,7 @@ namespace CustomEnnemies
             {
                 return;
             }
-            if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
+            if (__rpc_exec_stage == __RpcExecStage.Server)
             {
                 inSpecialAnimation = true;
                 isClientCalculatingAI = false;
@@ -372,13 +373,11 @@ namespace CustomEnnemies
             {
                 return;
             }
-            if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
+            if(__rpc_exec_stage == __RpcExecStage.Client)
             {
                 LogIfDebugBuild("attack test");
                 inSpecialAnimationWithPlayer = StartOfRound.Instance.allPlayerScripts[playerObjectId];
                 inSpecialAnimationWithPlayer.inAnimationWithEnemy = this;
-                //inSpecialAnimationWithPlayer.transform.position = playerParent.transform.position;
-                transform.position = new Vector3(inSpecialAnimationWithPlayer.transform.position.x, inSpecialAnimationWithPlayer.transform.position.y + 0.5f, inSpecialAnimationWithPlayer.transform.position.z);
                 SyncPositionToClients();
                 inSpecialAnimationWithPlayer.SyncBodyPositionWithClients();
                 inSpecialAnimationWithPlayer.voiceMuffledByEnemy = true;
@@ -402,13 +401,13 @@ namespace CustomEnnemies
             SwitchToBehaviourState((int)State.RkoInProgress);
             SetDestinationToPosition(inSpecialAnimationWithPlayer.transform.position);
             DoAnimationClientRpc("rko");
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(1f);
          
             if (inSpecialAnimationWithPlayer != null)
             {
                 LogIfDebugBuild("Rko hit player!");
                 inSpecialAnimationWithPlayer.DamagePlayer(400);
-                yield return new WaitForSeconds(1.2f);
+                yield return new WaitForSeconds(1f);
 
                 if (inSpecialAnimationWithPlayer != null && inSpecialAnimationWithPlayer.deadBody != null)
                 {
@@ -432,10 +431,14 @@ namespace CustomEnnemies
 
             inSpecialAnimation = false;
 
-            StartSearch(transform.position);
-            SwitchToBehaviourState((int)State.SearchingForPlayer);
-            creatureVoice.mute = false;
-            DoAnimationClientRpc("startWalk");
+
+            if (!isEnemyDead)
+            {
+                StartSearch(transform.position);
+                SwitchToBehaviourState((int)State.SearchingForPlayer);
+                creatureVoice.mute = false;
+                DoAnimationClientRpc("startWalk");
+            }          
         }
 
         [ServerRpc]
@@ -503,10 +506,14 @@ namespace CustomEnnemies
 
             inSpecialAnimation = false;
 
-            StartSearch(transform.position);
-            SwitchToBehaviourState((int)State.SearchingForPlayer);
-            creatureVoice.mute = false;
-            DoAnimationClientRpc("startWalk");
+
+            if (!isEnemyDead)
+            {
+                StartSearch(transform.position);
+                SwitchToBehaviourState((int)State.SearchingForPlayer);
+                creatureVoice.mute = false;
+                DoAnimationClientRpc("startWalk");
+            }
         }
 
         [ClientRpc]

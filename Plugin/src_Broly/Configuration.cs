@@ -11,7 +11,7 @@ namespace CustomEnnemies.Configuration {
         public PluginConfig(ConfigFile cfg)
         {
             SpawnWeight = cfg.Bind("General", "Spawn weight", 200,
-                "The spawn chance weight for RandyOrton, relative to other existing enemies.\n" +
+                "The spawn chance weight for Broly, relative to other existing enemies.\n" +
                 "Goes up from 0, lower is more rare, 100 and up is very common.");
             
             ClearUnusedEntries(cfg);

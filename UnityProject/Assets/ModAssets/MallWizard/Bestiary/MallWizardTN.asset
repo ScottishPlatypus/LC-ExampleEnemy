@@ -15,14 +15,18 @@ MonoBehaviour:
   displayText: 'Mall Wizard
 
 
-    Sigurd''s danger level: 5% ( Unless there is a
-    hole nearby )
+    Sigurd''s danger level: 15% but only near mines
+    and holes
 
 
     Scientific name: Crawlinus Wizardus
 
 
-    Description - Sigurd'
+    Description - This
+    little bugger and his friends will do whatever he can to annoy you and push you
+    around. He doesn''t really represent a menace as itself since he cannot inflict
+    direct injuries but when combined with other sources of death, he can become
+    a real threath you should take care of. - Sigurd'
   terminalEvent: 
   clearPreviousText: 1
   maxCharactersToType: 35
