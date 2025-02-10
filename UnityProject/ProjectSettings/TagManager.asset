@@ -53,6 +53,7 @@ TagManager:
   - PlayerRagdoll1
   - PlayerRagdoll2
   - PlayerRagdoll3
+  - Wizard
   layers:
   - Default
   - TransparentFX

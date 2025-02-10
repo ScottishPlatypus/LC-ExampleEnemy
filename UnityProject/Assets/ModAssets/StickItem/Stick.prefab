@@ -83,10 +83,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6802450496884220577}
+  - component: {fileID: 4588246755077114956}
   - component: {fileID: 1070755428485192315}
   - component: {fileID: 6723359554928026953}
   - component: {fileID: 2300835240883626624}
-  - component: {fileID: 4588246755077114956}
   - component: {fileID: 4552937380691829956}
   - component: {fileID: 4607622374862498531}
   m_Layer: 6
@@ -112,6 +112,27 @@ Transform:
   - {fileID: 1770607445485274888}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4588246755077114956
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7993724398839350431}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2187032578
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 1
+  AutoObjectParentSync: 0
 --- !u!114 &1070755428485192315
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -121,7 +142,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7993724398839350431}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: -807030531, guid: d14821e18b2161247a3f95021f96b009, type: 3}
+  m_Script: {fileID: -1315028379, guid: d14821e18b2161247a3f95021f96b009, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   grabbable: 1
@@ -134,7 +155,7 @@ MonoBehaviour:
   floorYRot: 0
   fallTime: 0
   hasHitGround: 0
-  scrapValue: 10
+  scrapValue: 0
   itemUsedUp: 0
   playerHeldBy: {fileID: 0}
   isPocketed: 0
@@ -163,8 +184,8 @@ MonoBehaviour:
   hasBeenHeld: 0
   stickAudio: {fileID: 2300835240883626624}
   previousPlayerHeldBy: {fileID: 0}
-  stickHitForce: 0
-  hitSFX: {fileID: 8300000, guid: 7b3dd7a59bfb28c4f8a4c9f0a129da88, type: 3}
+  stickHitForce: 2
+  hitSFX: {fileID: 8300000, guid: 131975f91d95b7e449be05fdba699d4d, type: 3}
   swingSFX: {fileID: 8300000, guid: 131975f91d95b7e449be05fdba699d4d, type: 3}
 --- !u!65 &6723359554928026953
 BoxCollider:
@@ -196,11 +217,10 @@ AudioSource:
   m_GameObject: {fileID: 7993724398839350431}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 24300042, guid: cb9fb87df5ca10840a2a5b2dc5a4284c,
-    type: 2}
+  OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_PlayOnAwake: 1
-  m_Volume: 0.2
+  m_PlayOnAwake: 0
+  m_Volume: 0.7
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -208,10 +228,10 @@ AudioSource:
   SpatializePostEffects: 0
   Priority: 128
   DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 20
+  MinDistance: 5
+  MaxDistance: 30
   Pan2D: 0
-  rolloffMode: 0
+  rolloffMode: 1
   BypassEffects: 0
   BypassListenerEffects: 0
   BypassReverbZones: 0
@@ -244,7 +264,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -284,26 +304,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &4588246755077114956
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7993724398839350431}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 951099334
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 1
-  AutoObjectParentSync: 0
 --- !u!33 &4552937380691829956
 MeshFilter:
   m_ObjectHideFlags: 0

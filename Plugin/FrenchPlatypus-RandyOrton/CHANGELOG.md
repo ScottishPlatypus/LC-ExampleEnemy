@@ -30,3 +30,10 @@
 ## 1.3.2
 
 - He no longer cancels his death music when killed while in attacking animation
+
+## 1.4.1
+
+- Did small changes to his walk cycle animation
+- He his now slower when not chasing a player
+- He now has a cooldown when being spotted while sneaking up to a player
+- Model as now seemless edges

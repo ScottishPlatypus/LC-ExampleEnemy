@@ -1,15 +1,15 @@
 ManifestFileVersion: 0
-CRC: 2194673700
+CRC: 813358805
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 7fc1e4541d2ef21966335d3c601fcfa9
+    Hash: 373235424e1f8fe283f3778c47612781
   TypeTreeHash:
     serializedVersion: 2
-    Hash: 86791b419116a4d38ff2e573f7f3134e
+    Hash: b0c3846c751bee05d368178499ffcaca
   IncrementalBuildHash:
     serializedVersion: 2
-    Hash: 7fc1e4541d2ef21966335d3c601fcfa9
+    Hash: 373235424e1f8fe283f3778c47612781
 HashAppended: 0
 ClassTypes:
 - Class: 1
@@ -42,12 +42,16 @@ ClassTypes:
   Script: {instanceID: 0}
 - Class: 95
   Script: {instanceID: 0}
+- Class: 108
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 314517330, guid: d14821e18b2161247a3f95021f96b009, type: 3}
 - Class: 114
   Script: {fileID: 1342412104, guid: d14821e18b2161247a3f95021f96b009, type: 3}
 - Class: 114
-  Script: {fileID: -807030531, guid: d14821e18b2161247a3f95021f96b009, type: 3}
-- Class: 114
   Script: {fileID: 11500000, guid: 65d3fcb39dd67306e9bb17a603308070, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 7a68c43fe1f2a47cfa234b5eeaa98012, type: 3}
 - Class: 114
   Script: {fileID: 11500000, guid: 04f75356a7e9c978bddc7d568e58a50b, type: 3}
 - Class: 114
@@ -62,19 +66,23 @@ ClassTypes:
   Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
 - Class: 114
   Script: {fileID: 11500000, guid: d3cecf05b78b173605122a700874719c, type: 3}
+- Class: 114
+  Script: {fileID: -1151111961, guid: d14821e18b2161247a3f95021f96b009, type: 3}
+- Class: 114
+  Script: {fileID: -1315028379, guid: d14821e18b2161247a3f95021f96b009, type: 3}
+- Class: 114
+  Script: {fileID: -27339566, guid: d14821e18b2161247a3f95021f96b009, type: 3}
 - Class: 115
   Script: {instanceID: 0}
 - Class: 137
   Script: {instanceID: 0}
 - Class: 195
   Script: {instanceID: 0}
+- Class: 198
+  Script: {instanceID: 0}
+- Class: 199
+  Script: {instanceID: 0}
 - Class: 213
-  Script: {instanceID: 0}
-- Class: 241
-  Script: {instanceID: 0}
-- Class: 243
-  Script: {instanceID: 0}
-- Class: 245
   Script: {instanceID: 0}
 - Class: 329
   Script: {instanceID: 0}
@@ -87,9 +95,17 @@ SerializeReferenceClassIdentifiers:
   ClassName: EnemyBehaviourState
 - AssemblyName: Assembly-CSharp
   ClassName: NavSizeLimit
+- AssemblyName: Unity.RenderPipelines.HighDefinition.Runtime
+  ClassName: UnityEngine.Rendering.HighDefinition.BoolScalableSettingValue
+- AssemblyName: Unity.RenderPipelines.HighDefinition.Runtime
+  ClassName: UnityEngine.Rendering.HighDefinition.IntScalableSettingValue
 Assets:
+- Assets/ModAssets/MallWizard/Magic_Projectile.prefab
 - Assets/ModAssets/MallWizard/Bestiary/MallWizardTK.asset
+- Assets/ModAssets/MallWizard/CBTWizard.asset
 - Assets/ModAssets/MallWizard/MallWizard.asset
+- Assets/ModAssets/MallWizard/Bestiary/CBTWizardTK.asset
+- Assets/ModAssets/StickItem/MagicStick.asset
 - Assets/ModAssets/MallWizard/Bestiary/MallWizardTN.asset
 - Assets/ModAssets/StickItem/Stick.asset
 Dependencies: []

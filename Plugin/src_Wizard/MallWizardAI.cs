@@ -37,7 +37,11 @@ namespace CustomEnnemies
 
         public NetworkObjectReference stickObjectRef;
 
+        public GameObject gnomePrefab;
         public GameObject wizardPrefab;
+
+        public float hitRange;
+        public int dropRate;
 
         float searchTimer;
 
@@ -86,21 +90,29 @@ namespace CustomEnnemies
 
         IEnumerator GenerateWizards()
         {
-            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.2f);
 
             if (!isClone && IsServer)
             {
                 LogIfDebugBuild("Start spawning clones");
                 for (int i = 0; i < 3; i++)
-                {
-                    SpawnWizardServerRpc(transform.position, transform.rotation.y);
+                {                
+                    if (i == 0 && Random.Range(0, 10) == 0)
+                    {
+                        LogIfDebugBuild("spawn wizard");
+                        SpawnWizardServerRpc(transform.position, transform.rotation.y);
+                    }
+                    else
+                    {
+                        SpawnGnomeServerRpc(transform.position, transform.rotation.y);
+                    }
                 }
             }
         }
 
 
         [ServerRpc]
-        public void SpawnWizardServerRpc(Vector3 spawnPosition, float yRot)
+        public void SpawnGnomeServerRpc(Vector3 spawnPosition, float yRot)
         {
             NetworkManager networkManager = base.NetworkManager;
             if ((object)networkManager == null || !networkManager.IsListening)
@@ -120,6 +132,43 @@ namespace CustomEnnemies
             }
             if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
 		    {
+                SpawnGnomeGameObject(spawnPosition, yRot);
+            }
+        }
+
+        public void SpawnGnomeGameObject(Vector3 spawnPosition, float yRot)
+        {
+            if (!base.IsServer)
+            {
+                return;
+            }
+            GameObject gameObject = Instantiate(gnomePrefab, spawnPosition, Quaternion.Euler(new Vector3(0f, yRot, 0f)));
+            gameObject.GetComponentInChildren<NetworkObject>().Spawn(true);
+            gameObject.GetComponent<MallWizardAI>().isClone = true;
+            RoundManager.Instance.SpawnedEnemies.Add(gameObject.GetComponent<EnemyAI>());
+        }
+
+        [ServerRpc]
+        public void SpawnWizardServerRpc(Vector3 spawnPosition, float yRot)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage != __RpcExecStage.Server && (networkManager.IsClient || networkManager.IsHost))
+            {
+                if (base.OwnerClientId != networkManager.LocalClientId)
+                {
+                    if (networkManager.LogLevel == LogLevel.Normal)
+                    {
+                        LogIfDebugBuild("Only the owner can invoke a ServerRpc that requires ownership!");
+                    }
+                    return;
+                }
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
+            {
                 SpawnWizardGameObject(spawnPosition, yRot);
             }
         }
@@ -132,7 +181,6 @@ namespace CustomEnnemies
             }
             GameObject gameObject = Instantiate(wizardPrefab, spawnPosition, Quaternion.Euler(new Vector3(0f, yRot, 0f)));
             gameObject.GetComponentInChildren<NetworkObject>().Spawn(true);
-            gameObject.GetComponent<MallWizardAI>().isClone = true;
             RoundManager.Instance.SpawnedEnemies.Add(gameObject.GetComponent<EnemyAI>());
         }
 
@@ -159,7 +207,8 @@ namespace CustomEnnemies
 		    {
                 GameObject gameObject = Instantiate(stickPrefab, transform.position + Vector3.up * 0.5f, Quaternion.identity, RoundManager.Instance.spawnedScrapContainer);
                 gameObject.GetComponent<NetworkObject>().Spawn();
-                GrabStick(gameObject);
+                int randomValue = Random.Range(25, 60);
+                GrabStick(gameObject, randomValue);
 
                 InitializeWizardClientRpc(gameObject.GetComponent<NetworkObject>());
             }
@@ -180,7 +229,7 @@ namespace CustomEnnemies
             }
         }
 
-        private void GrabStick(GameObject stickObject)
+        private void GrabStick(GameObject stickObject, int value)
         {
             stick = stickObject.GetComponent<StickItem>();
             if (stick == null)
@@ -188,8 +237,10 @@ namespace CustomEnnemies
                 LogEnemyError("Stick in GrabStick function did not contain PhysicsProp component.");
                 return;
             }
-            LogIfDebugBuild("Setting gun scrap value");
-            stick.SetScrapValue(10);
+            LogIfDebugBuild("Setting stick scrap value");
+
+            LogIfDebugBuild("Set stick value : " + value);
+            stick.SetScrapValue(value);
             RoundManager.Instance.totalScrapValueInLevel += stick.scrapValue;
             stick.parentObject = dropSpot;
             stick.isHeldByEnemy = true;
@@ -209,25 +260,27 @@ namespace CustomEnnemies
             {
                 LogIfDebugBuild("Grab stick if not holding");
                 stick = networkObject.gameObject.GetComponent<StickItem>();
-                GrabStick(stick.gameObject);
+                GrabStick(stick.gameObject, 100);
             }
             return stick != null;
         }
 
-        private void DropStick(Vector3 dropPosition)
+        private void DropStick(Vector3 dropPosition, int value)
         {
-            LogIfDebugBuild("DROP STICK");
             if (stick == null)
             {
                 LogEnemyError("Could not drop stick since no stick was held!");
                 return;
             }
+
             stick.gameObject.SetActive(true);
             stick.DiscardItemFromEnemy();
             stick.isHeldByEnemy = false;
             stick.grabbableToEnemies = true;
             stick.grabbable = true;
-            stick.transform.position = dropPosition;
+            stick.transform.position = dropSpot.position;
+            stick.transform.rotation = Quaternion.identity;
+            stick.scrapValue = value;
             stick.isInFactory = true;
         }
 
@@ -252,19 +305,21 @@ namespace CustomEnnemies
             }
             if (__rpc_exec_stage == __RpcExecStage.Server && (networkManager.IsServer || networkManager.IsHost))
 		    {
-                DropStickClientRpc(dropPosition);
+                int randomValue = Random.Range(80, 120);
+                if (Random.Range(0, dropRate) == 0)
+                    DropStickClientRpc(dropPosition, randomValue);
             }
         }
 
         [ClientRpc]
-        public void DropStickClientRpc(Vector3 dropPosition)
+        public void DropStickClientRpc(Vector3 dropPosition, int value)
         {
             NetworkManager networkManager = base.NetworkManager;
             if ((object)networkManager != null && networkManager.IsListening)
             {
                 if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost) && stick != null)
 			    {
-                    DropStick(dropPosition);
+                    DropStick(dropPosition, value);
                 }
             }
         }
@@ -297,7 +352,7 @@ namespace CustomEnnemies
                 SetDestinationToPosition(targetPlayer.transform.position);
 
                 turnCompass.LookAt(targetPlayer.gameplayCamera.transform.position);
-                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(new Vector3(0f, turnCompass.eulerAngles.y, 0f)), 4f * Time.deltaTime);
+                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(new Vector3(0f, turnCompass.eulerAngles.y, 0f)), 8f * Time.deltaTime);
             }
 
             if (stunNormalizedTimer > 0f)
@@ -368,7 +423,6 @@ namespace CustomEnnemies
                     if (FoundClosestPlayerInRange(10f, 5f) && targetPlayer != null && timeSinceHittingPlayer <= 0f)
                     {
                         LogIfDebugBuild("chasing Player : " + targetPlayer.playerUsername);
-                        DoAnimationClientRpc("chasePlayer");
                         SwitchToBehaviourState((int)State.ChasePlayer);
                     }
 
@@ -401,7 +455,7 @@ namespace CustomEnnemies
                         return;
                     }
 
-                    if (Vector3.Distance(transform.position, targetPlayer.transform.position) < 4 && !attackingPlayer)
+                    if (Vector3.Distance(transform.position, targetPlayer.transform.position) < hitRange && !attackingPlayer)
                     {
                         StartCoroutine(SwingAttack());
                     }
@@ -456,6 +510,9 @@ namespace CustomEnnemies
 
             DoAnimationClientRpc("attack");
             yield return new WaitForSeconds(0.3f);
+
+            transform.LookAt(targetPlayer.transform.position);
+
             SwingAttackHitClientRpc();
 
             yield return new WaitForSeconds(0.1f);
@@ -484,7 +541,7 @@ namespace CustomEnnemies
                         LogIfDebugBuild("Swing attack hit player : " + playerControllerB.playerUsername);
 
                         float num3 = Vector3.Distance(playerControllerB.transform.position, attackArea.position);
-                        Vector3 vector = Vector3.Normalize(playerControllerB.transform.position + Vector3.up * num3 - attackArea.position) / (num3 * 0.35f) * 8f;
+                        Vector3 vector = Vector3.Normalize(playerControllerB.transform.position + Vector3.up * num3 - attackArea.position) / (num3 * 0.35f) * 2f;
                         playerControllerB.externalForceAutoFade += vector;
                     }
                 }

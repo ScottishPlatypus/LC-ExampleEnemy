@@ -275,6 +275,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4a9ff17877084c34cba0ac18f56f44b9,
         type: 3}
       insertIndex: -1
+      addedObject: {fileID: 4520843118096204765}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4a9ff17877084c34cba0ac18f56f44b9,
+        type: 3}
+      insertIndex: -1
       addedObject: {fileID: 7878289276324080236}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4a9ff17877084c34cba0ac18f56f44b9,
         type: 3}
@@ -284,14 +288,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 8372344527602656182}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4a9ff17877084c34cba0ac18f56f44b9,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 4520843118096204765}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4a9ff17877084c34cba0ac18f56f44b9,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 4809550646475855222}
   m_SourcePrefab: {fileID: 100100000, guid: 4a9ff17877084c34cba0ac18f56f44b9, type: 3}
 --- !u!1 &6265838684602840607 stripped
 GameObject:
@@ -299,6 +295,27 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 6500333376764513102}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &4520843118096204765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6265838684602840607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2784827464
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 1
+  AutoObjectParentSync: 0
 --- !u!114 &7878289276324080236
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -368,8 +385,8 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_PlayOnAwake: 1
-  m_Volume: 0.5
+  m_PlayOnAwake: 0
+  m_Volume: 0.7
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -377,10 +394,10 @@ AudioSource:
   SpatializePostEffects: 0
   Priority: 128
   DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 5
+  MinDistance: 5
+  MaxDistance: 30
   Pan2D: 0
-  rolloffMode: 0
+  rolloffMode: 1
   BypassEffects: 0
   BypassListenerEffects: 0
   BypassReverbZones: 0
@@ -474,42 +491,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.34695742, y: 0.28522038, z: 0.3534815}
   m_Center: {x: 0, y: -0.0017341673, z: 0.17310815}
---- !u!114 &4520843118096204765
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6265838684602840607}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 951099334
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 1
-  AutoObjectParentSync: 0
---- !u!114 &4809550646475855222
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6265838684602840607}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 04f75356a7e9c978bddc7d568e58a50b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  useReverb: 0
-  overridingLowPass: 0
-  lowPassOverride: 20000
-  debugLog: 0
 --- !u!4 &6755236410222406821 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4a9ff17877084c34cba0ac18f56f44b9,

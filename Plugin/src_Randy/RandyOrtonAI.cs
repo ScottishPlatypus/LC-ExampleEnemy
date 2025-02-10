@@ -30,6 +30,7 @@ namespace CustomEnnemies
         bool isDeadAnimationDone;
         bool isAgressive;
         float puntKickTimer;
+        float sneakingTimer;
         enum State {
             SearchingForPlayer,
             ChasePlayerRko,
@@ -85,14 +86,13 @@ namespace CustomEnnemies
                 transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(new Vector3(0f, turnCompass.eulerAngles.y, 0f)), 4f * Time.deltaTime);
             }
             if (stunNormalizedTimer > 0f)
-            {
                 agent.speed = 0f;
-            }
 
-            if(puntKickTimer > 0f)
-            {
+            if (puntKickTimer > 0f)
                 puntKickTimer -= Time.deltaTime;
-            }
+
+            if (sneakingTimer > 0f)
+                sneakingTimer -= Time.deltaTime;
         }
 
         public override void OnGainedOwnership()
@@ -147,7 +147,7 @@ namespace CustomEnnemies
                             DoAnimationClientRpc("puntKickChase");
                             return;
                         }
-                        else if (!targetPlayer.HasLineOfSightToPosition(transform.position))
+                        else if (!targetPlayer.HasLineOfSightToPosition(transform.position) && sneakingTimer <= 0)
                         {
                             LogIfDebugBuild("Start Target Player For Rko");
                             StopSearch(currentSearch);
@@ -175,6 +175,7 @@ namespace CustomEnnemies
                     if (targetPlayer == null || targetPlayer.HasLineOfSightToPosition(transform.position) == true || Vector3.Distance(transform.position, targetPlayer.transform.position) > 15f) {
                         LogIfDebugBuild("Stop Target Player");
                         StartSearch(transform.position);
+                        sneakingTimer = 3;
                         SwitchToBehaviourState((int)State.SearchingForPlayer);
                         MuteVoiceClientRpc(false);
                         DoAnimationClientRpc("startWalk");

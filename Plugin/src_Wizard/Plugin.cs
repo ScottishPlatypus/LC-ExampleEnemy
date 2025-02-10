@@ -39,10 +39,22 @@ namespace CustomEnnemies {
             var MallWizardTN = ModAssets.LoadAsset<TerminalNode>("MallWizardTN");
             var MallWizardTK = ModAssets.LoadAsset<TerminalKeyword>("MallWizardTK");
 
+            var CBTWizard = ModAssets.LoadAsset<EnemyType>("CBTWizard");
+            var CBTWizardTN = ModAssets.LoadAsset<TerminalNode>("CBTWizardTN");
+            var CBTWizardTK = ModAssets.LoadAsset<TerminalKeyword>("CBTWizardTK");
+
             int iRarity = 0;
             var StickItem = ModAssets.LoadAsset<Item>("Stick");
+            var MagicStick = ModAssets.LoadAsset<Item>("MagicStick");
+            GameObject MagicProjectile = ModAssets.LoadAsset<GameObject>("Magic_Projectile");
+
             NetworkPrefabs.RegisterNetworkPrefab(StickItem.spawnPrefab);
             Items.RegisterScrap(StickItem, iRarity, Levels.LevelTypes.All);
+
+            NetworkPrefabs.RegisterNetworkPrefab(MagicStick.spawnPrefab);
+            Items.RegisterScrap(MagicStick, iRarity, Levels.LevelTypes.All);
+
+            NetworkPrefabs.RegisterNetworkPrefab(MagicProjectile);
 
             /*
             // Optionally, we can list which levels we want to add our enemy to, while also specifying the spawn weight for each.
@@ -56,9 +68,11 @@ namespace CustomEnnemies {
             // Network Prefabs need to be registered. See https://docs-multiplayer.unity3d.com/netcode/current/basics/object-spawning/
             // LethalLib registers prefabs on GameNetworkManager.Start.
             NetworkPrefabs.RegisterNetworkPrefab(MallWizard.enemyPrefab);
+            NetworkPrefabs.RegisterNetworkPrefab(CBTWizard.enemyPrefab);
 
             // For different ways of registering your enemy, see https://github.com/EvaisaDev/LethalLib/blob/main/LethalLib/Modules/Enemies.cs
             Enemies.RegisterEnemy(MallWizard, BoundConfig.SpawnWeight.Value, Levels.LevelTypes.All, MallWizardTN, MallWizardTK);
+            Enemies.RegisterEnemy(CBTWizard, 0, Levels.LevelTypes.All, CBTWizardTN, CBTWizardTK);
             // For using our rarity tables, we can use the following:
             //Enemies.RegisterEnemy(Broly, BrolyLevelRarities, null, BrolyTN, BrolyTK);
 

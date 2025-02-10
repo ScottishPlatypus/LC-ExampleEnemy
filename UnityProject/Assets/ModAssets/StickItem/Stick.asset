@@ -25,11 +25,11 @@ MonoBehaviour:
   itemSpawnsOnGround: 1
   isConductiveMetal: 0
   isScrap: 1
-  creditsWorth: 12
+  creditsWorth: 60
   lockedInDemo: 0
-  highestSalePercentage: 80
-  maxValue: 8
-  minValue: 15
+  highestSalePercentage: 50
+  maxValue: 60
+  minValue: 25
   spawnPrefab: {fileID: 7993724398839350431, guid: 5215934940adf014eb03e0710cb48132,
     type: 3}
   requiresBattery: 0
@@ -49,8 +49,8 @@ MonoBehaviour:
   syncUseFunction: 1
   syncDiscardFunction: 1
   syncInteractLRFunction: 0
-  saveItemVariable: 0
-  isDefensiveWeapon: 0
+  saveItemVariable: 1
+  isDefensiveWeapon: 1
   toolTips: []
   verticalOffset: 0
   floorYOffset: 0

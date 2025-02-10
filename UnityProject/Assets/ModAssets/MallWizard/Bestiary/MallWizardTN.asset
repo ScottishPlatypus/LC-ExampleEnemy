@@ -23,10 +23,16 @@ MonoBehaviour:
 
 
     Description - This
-    little bugger and his friends will do whatever he can to annoy you and push you
-    around. He doesn''t really represent a menace as itself since he cannot inflict
-    direct injuries but when combined with other sources of death, he can become
-    a real threath you should take care of. - Sigurd'
+    little creature thinks it can bend reality and cast powerful spells but they
+    are akin to a child playing with a net, only pretending to be a menace. They
+    seem to gather in small groups to play together and roam through facilities.
+
+
+    Those
+    little buggers will do whatever they can to annoy you and push you around if
+    they notice you. They doesn''t really represent a menace by themselves since
+    they cannot inflict direct injuries but when combined with other sources of death,
+    they can become a real threat you should take care of. - Sigurd'
   terminalEvent: 
   clearPreviousText: 1
   maxCharactersToType: 35
@@ -48,6 +54,6 @@ MonoBehaviour:
   playClip: {fileID: 0}
   playSyncedClip: 2
   displayTexture: {fileID: 0}
-  displayVideo: {fileID: 32900000, guid: 719e587dd023ceb4c9e63420b04d290d, type: 3}
+  displayVideo: {fileID: 32900000, guid: 119f083218f57f5468ef98e3eaff8b3a, type: 3}
   loadImageSlowly: 1
   persistentImage: 0
